@@ -14,7 +14,7 @@ function verify () {
       try {
         const decoded = jwt.verify(token, 'ColabDocs')
         if (decoded.id) { // 合法
-          console.log('decoded-----------------------',decoded)
+          console.log('token校验编码成功')
           ctx.name = decoded.name
 
           await next()

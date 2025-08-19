@@ -1,2 +1,112 @@
 @import './styles/_variables.scss';
 @import './styles/_keyframe-animations.scss';
+
+/* 确保编辑器内容区域居中 */
+.simple-editor-wrapper {
+  max-width: 100%;
+  width: 100%;
+  overflow-x: visible; /* 允许内容超出宽度 */
+}
+
+/* 确保表格可以水平滚动 */
+.simple-editor table {
+  overflow-x: auto;
+  display: block;
+}
+
+/* 工具栏滚动条与滚动行为 */
+.tiptap-toolbar {
+  overflow-x: auto;      /* 启用横向滚动 */
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;   /* 非 flex 环境下兜底不换行 */
+
+  scrollbar-width: thin; /* Firefox */
+  /* Webkit浏览器 */
+  &::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    opacity: 0;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    opacity: 1;
+  }
+
+  /* 暗色模式适配 */
+  .dark & {
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
+/* 工具栏子项不收缩，避免被挤压；让容器产生滚动 */
+.tiptap-toolbar > * {
+  flex-shrink: 0;
+}
+
+/* 固定工具栏样式 */
+.fixed-toolbar {
+  padding: 4px 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  width: 100%;
+  z-index: 100;
+  pointer-events: auto !important;
+  position: relative;
+}
+
+.tiptap-toolbar button {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 101;
+}
+
+/* 目录侧边栏样式 */
+.toc-sidebar {
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+.toc-toggle-btn {
+  transition: margin-left 0.3s ease;
+}
+
+/* 目录列表项样式 */
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-item {
+  transition: all 0.2s ease;
+  padding-left: 10px;
+  border-left: 2px solid transparent;
+}
+
+.toc-item:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  color: #1890ff;
+}
+
+.active-toc-item {
+  background-color: rgba(24, 144, 255, 0.05);
+  color: #1890ff;
+  border-left-color: #1890ff;
+  font-weight: 500;
+}

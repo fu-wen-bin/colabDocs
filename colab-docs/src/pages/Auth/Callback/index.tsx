@@ -14,11 +14,13 @@ interface UserValues {
 
 // Token响应接口，使其与后端返回结构匹配
 interface TokenResponse {
+
   code: string;
   message: string;
   userdata: UserValues;
   access_token: string;
   refresh_token: string;
+
 }
 
 export default function OauthCallback () {
@@ -48,7 +50,7 @@ export default function OauthCallback () {
         console.log('后端响应:', response)
 
         // 修改：从response.data获取数据
-        const userData = response.data;
+        const userData = response.data
 
         const values: UserValues = {
           id: userData.id,
@@ -61,16 +63,19 @@ export default function OauthCallback () {
 
         if (response.data.success) {
           // 后端响应成功后发出请求，生成jwt的token
-          const tokenResponse = await axios.post<TokenResponse>('/token/init', values)
+          const tokenResponse = await axios.post<TokenResponse>('/token/init',
+            values)
           console.log('Token响应:', tokenResponse)
 
           // 修改：从tokenResponse.data获取数据
           if (tokenResponse.data) {
             // 使用authUtils中的方法保存token
-            authUtils.setTokens(tokenResponse.data.access_token, tokenResponse.data.refresh_token)
+            authUtils.setTokens(tokenResponse.data.access_token,
+              tokenResponse.data.refresh_token)
 
             // 将data转成json字符串存储到浏览器中
-            localStorage.setItem('userInfo', JSON.stringify(tokenResponse.data.userdata))
+            localStorage.setItem('userInfo',
+              JSON.stringify(tokenResponse.data.userdata))
 
             // 登录成功弹窗
             toast.success(tokenResponse.data.message)

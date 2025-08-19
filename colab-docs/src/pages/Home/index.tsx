@@ -45,8 +45,8 @@ export default function Index () {
         console.log('后端响应全部数据:', response)
 
         // 这里的 response 已经是 response.data，因为拦截器已经处理过
-        if (response.code === '1') {
-          const userData = response.data
+        if (response.data && response.data.code === '1') {
+          const userData = response.data.data
           console.log('用户信息:', userData)
 
           // 设置用户信息到authUtils中

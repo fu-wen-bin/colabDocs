@@ -27,12 +27,10 @@ router.post('/init', async (ctx) => {
     // 返回标准格式的响应
     ctx.body = {
       code: '1',
-      data: {
-        message: '登录成功',
-        access_token,
-        refresh_token,
-        userdata: data,
-      },
+      message: '登录成功',
+      access_token,
+      refresh_token,
+      userdata: data,
     }
   } catch (error) { // 程序性错误，返回错误信息
     ctx.body = {

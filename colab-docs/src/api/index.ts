@@ -28,7 +28,7 @@ axios.interceptors.response.use(
         toast.error(response.data.message)
         return Promise.reject(response) // 返回一个被拒绝的 Promise，方便程序员捕获异常用于调试
       }
-      return Promise.resolve(response.data)
+      return Promise.resolve(response)
     }
   },
   async error => {

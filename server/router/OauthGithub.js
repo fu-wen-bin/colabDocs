@@ -8,7 +8,7 @@ require('dotenv').config()
 // 从环境变量获取敏感信息
 const clientID = process.env.GITHUB_CLIENT_ID || 'Ov23liLWI73TRxSWHiPg'
 const clientSecret = process.env.GITHUB_CLIENT_SECRET ||
-                     '510248cb8a14083b5ba6d60a88368a5575b0c8eb'
+                     '4a6368fbc73fe2ae4e260726fc7e64b8904ea8c4'
 const COOKIE_MAX_AGE = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 *
                        60 * 1000 // 30天
 
@@ -130,7 +130,6 @@ router.get('/api/user', verify(), async (ctx) => {
       },
 
     }
-    console.log('发送给前端的完整响应:', ctx.body)
   } catch (error) {
     // 增强错误日志
     console.error('GitHub API请求失败:', error.message)
