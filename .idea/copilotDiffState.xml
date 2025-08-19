@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/colab-docs/src/components/Button.css">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/colab-docs/src/components/Button.css" />
+              <option name="updatedContent" value=".button {&#10;  background-color: #3b82f6;&#10;  color: #eff6ff;&#10;  padding: 0.5rem 1rem;&#10;  border-radius: 0.375rem;&#10;  transition: color 0.2s;&#10;}&#10;&#10;/* 确保:hover选择器位于.button之后，提高特异性 */&#10;.button:hover {&#10;  color: #22c55e; /* 绿色 */&#10;}&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/colab-docs/src/components/Button.tsx">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/colab-docs/src/components/Button.tsx" />
+              <option name="updatedContent" value="import React from 'react';&#10;&#10;interface ButtonProps {&#10;  children: React.ReactNode;&#10;  className?: string;&#10;  onClick?: () =&gt; void;&#10;}&#10;&#10;export default function Button({ children, className = '', onClick }: ButtonProps) {&#10;  // 添加hover:text-green-500类来实现悬浮时文字变绿&#10;  return (&#10;    &lt;button &#10;      className={`bg-blue-500 text-blue-50 px-4 py-2 rounded-md hover:text-green-500 transition-colors ${className}`}&#10;      onClick={onClick}&#10;    &gt;&#10;      {children}&#10;    &lt;/button&gt;&#10;  );&#10;}&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/colab-docs/src/components/StyledButton.tsx">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/colab-docs/src/components/StyledButton.tsx" />
+              <option name="updatedContent" value="import styled from 'styled-components';&#10;&#10;const StyledButton = styled.button`&#10;  background-color: #3b82f6;&#10;  color: #eff6ff;&#10;  padding: 0.5rem 1rem;&#10;  border-radius: 0.375rem;&#10;  transition: color 0.2s;&#10;  &#10;  &amp;:hover {&#10;    color: #22c55e; /* 绿色 */&#10;  }&#10;`;&#10;&#10;export default StyledButton;&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/colab-docs/src/pages/Auth/callback.tsx">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/colab-docs/src/pages/Auth/callback.tsx" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/mouse-cursor-effect.html">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/mouse-cursor-effect.html" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/node-oauth-demo/routes/githubOauth.js">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/node-oauth-demo/routes/githubOauth.js" />
+              <option name="updatedContent" value="const Router = require('@koa/router')&#10;const axios = require('axios')&#10;const router = new Router()&#10;&#10;// Fill in your client ID and client secret that you obtained&#10;// while registering the application&#10;const clientID = '7e015d8ce32370079895'&#10;const clientSecret = '2b976af0e6b6ceea2b1554aa31d1fe94ea692cd9'&#10;&#10;router.get('/oauth/redirect', async ctx =&gt; {&#10;  const requestToken = ctx.request.query.code&#10;  console.log('authorization code:', requestToken)&#10;&#10;  const tokenResponse = await axios({&#10;    method: 'post',&#10;    url: 'https://github.com/login/oauth/access_token?' +&#10;         `client_id=${clientID}&amp;` +&#10;         `client_secret=${clientSecret}&amp;` +&#10;         `code=${requestToken}`,&#10;    headers: {&#10;      accept: 'application/json',&#10;    },&#10;  })&#10;&#10;  const accessToken = tokenResponse.data.access_token&#10;  const data = tokenResponse.data&#10;  console.log('token response:', data)&#10;  console.log(`access token: ${accessToken}`)&#10;&#10;  const result = await axios({&#10;    method: 'get',&#10;    url: `https://api.github.com/user`,&#10;    headers: {&#10;      accept: 'application/json',&#10;      Authorization: `token ${accessToken}`,&#10;    },&#10;  })&#10;  console.log(result.data)&#10;  const name = result.data.name&#10;&#10;  ctx.response.redirect(`/welcome.html?name=${name}`)&#10;})&#10;&#10;module.exports = router&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/server/app.js">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/server/app.js" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
