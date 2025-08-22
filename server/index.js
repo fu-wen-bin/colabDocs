@@ -37,12 +37,12 @@ app.use(bodyParser(
 )) // 辅助koa解析请求体中的数据，ctx.request.body
 
 // 添加日志中间件
-app.use(async (ctx, next) => {
-  const start = Date.now()
-  await next()
-  const ms = Date.now() - start
-  logger.info(`${ctx.method} ${ctx.url} - ${ms}ms`)
-})
+// app.use(async (ctx, next) => {
+//   const start = Date.now()
+//   await next()
+//   const ms = Date.now() - start
+//   logger.info(`${ctx.method} ${ctx.url} - ${ms}ms`)
+// })
 
 // useRouter 是一个对象，不是函数
 // 1. 被 app.use 调用的函数中一定拥有参数 ctx

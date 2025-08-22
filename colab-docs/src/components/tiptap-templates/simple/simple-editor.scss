@@ -55,19 +55,19 @@ body,
 }
 
 .simple-editor-wrapper {
-  width: 100vw;
-  height: 100vh;
-  overflow: auto;
+  width: 100%; /* 原为 100vw */
+  height: auto; /* 原为 100vh */
+  overflow: visible; /* 原为 overflow: auto，使其不再作为滚动容器 */
 }
 
 .simple-editor-content {
   max-width: 900px;
   width: 100%;
   margin: 0 auto;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
+  /* 原: height: 100%; display:flex; flex-direction:column; flex:1; */
+  height: auto;
+  min-height: 100%;
+  display: block;
 }
 
 .simple-editor-content .tiptap.ProseMirror.simple-editor {

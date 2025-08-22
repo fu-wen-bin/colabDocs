@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken')
+const { logger } = require('./logger')
 
 function sign (options, duration) {
   return jwt.sign(options, 'ColabDocs', {
@@ -14,11 +15,14 @@ function verify () {
       try {
         const decoded = jwt.verify(token, 'ColabDocs')
         if (decoded.id) { // 合法
-          console.log('token校验编码成功')
+          logger.success('token校验编码成功')
           ctx.name = decoded.name
 
           await next()
+        } else {
+          console.log('token校验编码失败')
         }
+
       } catch (error) {
         console.log(error, '-----')
         ctx.status = 401
@@ -26,6 +30,7 @@ function verify () {
       }
 
     } else {
+      logger.info('没有token')
       ctx.status = 401
       ctx.body = { error: '登录过期请重新登录' }
     }

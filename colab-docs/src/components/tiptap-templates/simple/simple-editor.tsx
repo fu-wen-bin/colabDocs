@@ -1,5 +1,6 @@
-import * as React from 'react'
-import { Editor, EditorContent, EditorContext, useEditor } from '@tiptap/react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { EditorContent, EditorContext, useEditor } from '@tiptap/react'
+import { IndexeddbPersistence } from 'y-indexeddb'
 
 // --- Tiptap Core Extensions ---
 import { StarterKit } from '@tiptap/starter-kit'
@@ -13,13 +14,7 @@ import { Superscript } from '@tiptap/extension-superscript'
 import { Selection } from '@tiptap/extensions'
 
 // --- UI Primitives ---
-import { Button } from '@/components/tiptap-ui-primitive/button'
-import { Spacer } from '@/components/tiptap-ui-primitive/spacer'
-import {
-  Toolbar,
-  ToolbarGroup,
-  ToolbarSeparator,
-} from '@/components/tiptap-ui-primitive/toolbar'
+import { Toolbar } from '@/components/tiptap-ui-primitive/toolbar'
 
 // --- Tiptap Node ---
 import {
@@ -35,33 +30,6 @@ import '@/components/tiptap-node/list-node/list-node.scss'
 import '@/components/tiptap-node/image-node/image-node.scss'
 import '@/components/tiptap-node/heading-node/heading-node.scss'
 import '@/components/tiptap-node/paragraph-node/paragraph-node.scss'
-
-// --- Tiptap UI ---
-import {
-  HeadingDropdownMenu,
-} from '@/components/tiptap-ui/heading-dropdown-menu'
-import { ImageUploadButton } from '@/components/tiptap-ui/image-upload-button'
-import { ListDropdownMenu } from '@/components/tiptap-ui/list-dropdown-menu'
-import { BlockquoteButton } from '@/components/tiptap-ui/blockquote-button'
-import { CodeBlockButton } from '@/components/tiptap-ui/code-block-button'
-import {
-  ColorHighlightPopover,
-  ColorHighlightPopoverButton,
-  ColorHighlightPopoverContent,
-} from '@/components/tiptap-ui/color-highlight-popover'
-import {
-  LinkButton,
-  LinkContent,
-  LinkPopover,
-} from '@/components/tiptap-ui/link-popover'
-import { MarkButton } from '@/components/tiptap-ui/mark-button'
-import { TextAlignButton } from '@/components/tiptap-ui/text-align-button'
-import { UndoRedoButton } from '@/components/tiptap-ui/undo-redo-button'
-
-// --- Icons ---
-import { ArrowLeftIcon } from '@/components/tiptap-icons/arrow-left-icon'
-import { HighlighterIcon } from '@/components/tiptap-icons/highlighter-icon'
-import { LinkIcon } from '@/components/tiptap-icons/link-icon'
 
 // --- Hooks ---
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -81,152 +49,245 @@ import content from '@/components/tiptap-templates/simple/data/content.json'
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCaret from '@tiptap/extension-collaboration-caret'
-
-const MainToolbarContent = ({
-                              onHighlighterClick,
-                              onLinkClick,
-                              isMobile,
-                            }: {
-  onHighlighterClick: () => void
-  onLinkClick: () => void
-  isMobile: boolean
-}) => {
-  return (
-    <>
-      <Spacer/>
-
-      <ToolbarGroup>
-        <UndoRedoButton action="undo"/>
-        <UndoRedoButton action="redo"/>
-      </ToolbarGroup>
-
-      <ToolbarSeparator/>
-
-      <ToolbarGroup>
-        <HeadingDropdownMenu levels={[1, 2, 3, 4]} portal={isMobile}/>
-        <ListDropdownMenu
-          types={['bulletList', 'orderedList', 'taskList']}
-          portal={isMobile}
-        />
-        <BlockquoteButton/>
-        <CodeBlockButton/>
-      </ToolbarGroup>
-
-      <ToolbarSeparator/>
-
-      <ToolbarGroup>
-        <MarkButton type="bold"/>
-        <MarkButton type="italic"/>
-        <MarkButton type="strike"/>
-        <MarkButton type="code"/>
-        <MarkButton type="underline"/>
-        {!isMobile ? (
-          <ColorHighlightPopover/>
-        ) : (
-          <ColorHighlightPopoverButton onClick={onHighlighterClick}/>
-        )}
-        {!isMobile ? <LinkPopover/> : <LinkButton onClick={onLinkClick}/>}
-      </ToolbarGroup>
-
-      <ToolbarSeparator/>
-
-      <ToolbarGroup>
-        <MarkButton type="superscript"/>
-        <MarkButton type="subscript"/>
-      </ToolbarGroup>
-
-      <ToolbarSeparator/>
-
-      <ToolbarGroup>
-        <TextAlignButton align="left"/>
-        <TextAlignButton align="center"/>
-        <TextAlignButton align="right"/>
-        <TextAlignButton align="justify"/>
-      </ToolbarGroup>
-
-      <ToolbarSeparator/>
-
-      <ToolbarGroup>
-        <ImageUploadButton text="Add"/>
-      </ToolbarGroup>
-
-      <Spacer/>
-
-      {isMobile && <ToolbarSeparator/>}
-
-    </>
-  )
-}
-
-const MobileToolbarContent = ({
-                                type,
-                                onBack,
-                              }: {
-  type: 'highlighter' | 'link'
-  onBack: () => void
-}) => (
-  <>
-    <ToolbarGroup>
-      <Button data-style="ghost" onClick={onBack}>
-        <ArrowLeftIcon className="tiptap-button-icon"/>
-        {type === 'highlighter' ? (
-          <HighlighterIcon className="tiptap-button-icon"/>
-        ) : (
-          <LinkIcon className="tiptap-button-icon"/>
-        )}
-      </Button>
-    </ToolbarGroup>
-
-    <ToolbarSeparator/>
-
-    {type === 'highlighter' ? (
-      <ColorHighlightPopoverContent/>
-    ) : (
-      <LinkContent/>
-    )}
-  </>
-)
+import { ws_server_url } from '@/lib/defaultConfig.ts'
+import * as Y from 'yjs'
+import { authUtils } from '@/api'
+import { getCursorColorByUserId } from '@/lib/cursor_color.ts'
+import { useEditorStore } from '@/stores/editorStore'
 
 // 修改接口定义，添加 documentId 属性
 interface SimpleEditorProps {
-  onEditorReady?: (editor: Editor) => void;
   showToolbar?: boolean;
   documentId?: string; // 新增：协作文档ID
 }
 
+interface CollaborationUser {
+  id: string;
+  name: string;
+  color: string;
+  avatar: string;
+}
+
+type ConnectionStatus =
+  'connecting'
+  | 'connected'
+  | 'disconnected'
+  | 'syncing'
+  | 'error';
+
 export function SimpleEditor ({
-  onEditorReady,
-  showToolbar = true,
-  documentId = 'default-doc', // 新增：默认文档ID
-}: SimpleEditorProps) {
+                                showToolbar = true,
+                                documentId = 'default-doc', // 新增：默认文档ID
+                              }: SimpleEditorProps) {
   const isMobile = useIsMobile()
   const { height } = useWindowSize()
-  const [mobileView, setMobileView] = React.useState<
-    'main' | 'highlighter' | 'link'
-  >('main')
-  const toolbarRef = React.useRef<HTMLDivElement>(null)
-
+  const toolbarRef = useRef<HTMLDivElement>(null)
   // Hocuspocus Provider
-  const [provider, setProvider] = React.useState<HocuspocusProvider | null>(null)
-  React.useEffect(() => {
-    const p = new HocuspocusProvider({
-      url: 'ws://localhost:9999', // TODO: 与后端 ws_port 保持一致
-      name: documentId,
-      onOpen: () => console.log('[Hocuspocus] connected'),
-      onClose: () => console.log('[Hocuspocus] disconnected'),
-      onError: (e) => console.error('[Hocuspocus] error', e),
-    })
-    setProvider(p)
-    return () => p.destroy()
-  }, [documentId])
+  const [provider, setProvider] = useState<HocuspocusProvider | null>(null)
+  const [doc, setDoc] = useState<Y.Doc | null>(null)
+  const providerRef = useRef<HocuspocusProvider | null>(null)
+  const [isEditorReady, setIsEditorReady] = useState(false)
+  const [authToken, setAuthToken] = useState<string>('')
+  const [currentUser, setCurrentUser] = useState<CollaborationUser | null>(null)
+  const [connectedUsers, setConnectedUsers] = useState<CollaborationUser[]>([])
+  const [isClientReady, setIsClientReady] = useState(false)
+  const setEditor = useEditorStore((state) => state.setEditor)
+  const [isServerSynced, setIsServerSynced] = useState(false)
+  const hasUnsyncedChangesRef = useRef(false)
+  const [isLocalLoaded, setIsLocalLoaded] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
+    'connecting')
+  const [loading, setLoading] = useState(true);
 
+  // 创建Y.Doc
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setDoc(new Y.Doc())
+      setAuthToken(authUtils.getAccessToken() as string)
+      setIsClientReady(true)
+    }
+  }, [])
+
+  const getDocumentContent = async () => {
+    try {
+      setLoading(true);
+      const result = await axios.get('/doc/getContent', {
+
+      })
+
+    } catch {
+
+    }
+  }
+
+  // 从localStorage获取当前用户信息
+  useEffect(() => {
+    if (!authToken || !documentId || documentId === '') return
+
+    try {
+      const userProfileStr = authUtils.getUser()
+      if (userProfileStr) {
+        setCurrentUser({
+          id: userProfileStr.id.toString(),
+          name: userProfileStr.name,
+          color: getCursorColorByUserId(userProfileStr.id.toString()),
+          avatar: userProfileStr.avatar_url,
+        })
+      }
+
+    } catch (error) {
+      console.error('解析用户信息失败:', error)
+    }
+  }, [authToken, documentId])
+
+  // 本地持久化 - IndexedDB 只在浏览器中可用
+  useEffect(() => {
+    if (!documentId || !doc || typeof window === 'undefined') return
+
+    const persistence = new IndexeddbPersistence(
+      `tiptap-collaborative-${documentId}`, doc)
+    const localStorageKey = `offline-edits-${documentId}`
+
+    persistence.on('synced', () => {
+      setIsLocalLoaded(true)
+
+      if (localStorage.getItem(localStorageKey) === 'true') {
+        hasUnsyncedChangesRef.current = true
+      }
+    })
+
+    const handleTransaction = () => {
+      localStorage.setItem(localStorageKey, 'true')
+      localStorage.setItem(`last-offline-edit-${documentId}`,
+        new Date().toISOString())
+      hasUnsyncedChangesRef.current = true
+    }
+
+    persistence.on('afterTransaction', handleTransaction)
+    doc.on('update', handleTransaction)
+
+    return () => {
+      persistence.destroy()
+    }
+  }, [documentId, doc])
+
+  // 确保编辑器和服务器准备就绪
+  useEffect(() => {
+
+    if (!authToken || !documentId || !doc || !isEditorReady) return
+
+    // 如果已经有连接且参数相同，不重复创建
+    if (providerRef.current && providerRef.current.configuration.name ===
+        documentId) {
+      return
+    }
+
+    // 清理旧连接
+    if (providerRef.current) {
+      providerRef.current.destroy()
+      providerRef.current = null
+    }
+    // 额外延迟，确保编辑器完全稳定后再建立WebSocket连接
+    const connectionTimer = setTimeout(() => {
+      const clearOfflineEdits = () => {
+        hasUnsyncedChangesRef.current = false
+        localStorage.removeItem(`offline-edits-${documentId}`)
+      }
+      const hocuspocusProvider = new HocuspocusProvider({
+        url: ws_server_url, // TODO: 与后端 ws_port 保持一致
+        name: documentId,
+        document: doc,
+        token: authToken,
+        onConnect: () => {
+          console.log('[Hocuspocus] connected')
+          setConnectionStatus('syncing')
+          getDocumentContent()
+        },
+        onDisconnect: () => {
+          console.log('[Hocuspocus] disconnected')
+          setConnectionStatus('disconnected')
+          setIsServerSynced(false)
+        },
+        onDestroy: () => {
+          setConnectionStatus('disconnected')
+          setIsServerSynced(false)
+        },
+        onAuthenticationFailed: (data) => {
+          console.error('协作服务器认证失败:', data)
+          setConnectionStatus('error')
+        },
+        onSynced: () => {
+          setConnectionStatus('connected')
+          setIsServerSynced(true)
+          clearOfflineEdits()
+        },
+      })
+      providerRef.current = hocuspocusProvider
+      setProvider(hocuspocusProvider)
+    }, 300) // 300ms延迟，确保编辑器完全稳定
+    return () => {
+      clearTimeout(connectionTimer)
+
+      // 只在组件卸载时清理
+      if (providerRef.current) {
+        if (providerRef.current.awareness) {
+          providerRef.current.awareness.setLocalStateField('user', null)
+        }
+
+        providerRef.current.destroy()
+        providerRef.current = null
+      }
+    }
+  }, [documentId, isEditorReady])
+
+  // 设置用户awareness信息
+  useEffect(() => {
+    if (provider?.awareness && currentUser) {
+      provider.awareness.setLocalStateField('user', currentUser)
+    }
+  }, [provider, currentUser])
+
+  // 协作用户管理
+  useEffect(() => {
+    if (!provider?.awareness) return
+
+    const handleAwarenessUpdate = () => {
+      const states = provider.awareness!.getStates()
+      const users: CollaborationUser[] = []
+
+      states.forEach((state, clientId) => {
+        if (state?.user) {
+          const userData = state.user
+          const userId = userData.id || clientId.toString()
+
+          if (currentUser && userId !== currentUser.id) {
+            users.push({
+              id: userId,
+              name: userData.name,
+              color: getCursorColorByUserId(userId),
+              avatar: userData.avatar,
+            })
+          }
+        }
+      })
+
+      setConnectedUsers(users)
+    }
+
+    provider.awareness.on('update', handleAwarenessUpdate)
+
+    return () => provider.awareness?.off('update', handleAwarenessUpdate)
+  }, [provider, currentUser])
+
+  // 设置编辑器准备就绪状态
   const editor = useEditor({
+    autofocus: true,
     immediatelyRender: false,
     shouldRerenderOnTransaction: false,
     editorProps: {
       attributes: {
-        autocomplete: 'off',
-        autocorrect: 'off',
+        autocomplete: 'on',
+        autocorrect: 'on',
         autocapitalize: 'off',
         'aria-label': 'Main content area, start typing to enter text.',
         class: 'simple-editor',
@@ -255,72 +316,74 @@ export function SimpleEditor ({
         onError: (error) => console.error('Upload failed:', error),
       }),
       // 新增：协同编辑扩展（在 provider 就绪时启用）
-      ...(provider ? [
-        Collaboration.configure({
-          document: provider.document,
-        }),
-        CollaborationCaret.configure({
-          provider,
-          user: {
-            name: localStorage.getItem('username') || '用户',
-            color: getRandomColor(),
-          },
-        }),
-      ] : []),
+      ...(doc
+        ? [Collaboration.configure({ document: doc, field: 'content' })]
+        : []),
+      ...(provider && currentUser && doc
+        ? [CollaborationCaret.configure({ provider, user: currentUser })] : []),
     ],
     content: provider ? undefined : content,
-  }, [provider])
+    onSelectionUpdate: ({ editor }) => {
+      // 延迟DOM操作，避免在渲染期间触发
+      requestAnimationFrame(() => {
+        const { from, to } = editor.state.selection
+        const isAllSelected = from === 0 && to ===
+                              editor.state.doc.content.size
+        const editorElement = document.querySelector('.ProseMirror')
 
-  React.useEffect(() => {
-    if (editor && onEditorReady) onEditorReady(editor)
-  }, [editor, onEditorReady])
+        if (editorElement) {
+          editorElement.classList.toggle('is-all-selected', isAllSelected)
+        }
+      })
+    },
+    onCreate: () => {
+      // 编辑器创建成功后延迟设置就绪状态
+      setTimeout(() => {
+        setIsEditorReady(true)
+      }, 500) // 增加延迟，确保编辑器完全就绪
+    },
+    onUpdate: () => {
+      // 防止在更新期间的意外状态变更
+    },
+  }, [provider, doc, currentUser]) // 依赖 provider 和 doc，确保协作扩展正确初始化
+
+  useEffect(() => {
+    if (editor) {
+      setEditor(editor)
+    }
+
+  }, [editor])
 
   // 将“光标可见性”逻辑移动到仅在 editor 存在时才渲染的子组件，避免未挂载时报错
-  const ToolbarWithCursor = React.useMemo(() => {
-    if (!showToolbar) return null
-    if (!editor) return null
-    return (
-      <Toolbar
-        ref={toolbarRef}
-        className="tiptap-toolbar"
-        style={{
-          ...(isMobile
-            ? {
-              bottom: `calc(100% - ${
-                height - (useCursorVisibility({
-                  editor,
-                  overlayHeight: toolbarRef.current?.getBoundingClientRect().height ?? 0,
-                }).y)
-              }px)`,
-            }
-            : {}),
-          width: '100%',
-          overflowX: 'auto',
-        }}
-      >
-        {mobileView === 'main' ? (
-          <MainToolbarContent
-            onHighlighterClick={() => setMobileView('highlighter')}
-            onLinkClick={() => setMobileView('link')}
-            isMobile={isMobile}
-          />
-        ) : (
-          <MobileToolbarContent
-            type={mobileView === 'highlighter' ? 'highlighter' : 'link'}
-            onBack={() => setMobileView('main')}
-          />
-        )}
-      </Toolbar>
-    )
-  }, [
-    showToolbar,
-    editor,
-    isMobile,
-    height,
-    mobileView,
-    toolbarRef,
-    setMobileView])
-
+  const ToolbarWithCursor = useMemo(() => {
+      if (!showToolbar) return null
+      if (!editor) return null
+      return (
+        <Toolbar
+          ref={toolbarRef}
+          className="tiptap-toolbar"
+          style={{
+            ...(isMobile
+              ? {
+                bottom: `calc(100% - ${
+                  height - (useCursorVisibility(
+                    {
+                      editor,
+                      overlayHeight: toolbarRef.current?.getBoundingClientRect().height ??
+                                     0,
+                    }).y)
+                }px)`,
+              }
+              : {}),
+            width: '100%',
+            overflowX: 'auto',
+          }}
+        >
+        </Toolbar>
+      )
+    }, [showToolbar, editor, isMobile, height, toolbarRef],
+  )
+  console.log(provider, 'provider')
   return (
     <div className="simple-editor-wrapper">
       <EditorContext.Provider value={{ editor }}>
@@ -336,8 +399,3 @@ export function SimpleEditor ({
   )
 }
 
-// 新增：为协同光标提供随机颜色
-function getRandomColor () {
-  const colors = ['#958DF1','#F98181','#FBBC88','#FAF594','#70CFF8','#94FADB','#B9F18D']
-  return colors[Math.floor(Math.random() * colors.length)]
-}

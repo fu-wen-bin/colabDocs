@@ -44,7 +44,6 @@ router.post('/init', async (ctx) => {
 // 刷新token的路由
 router.post('/refresh', async (ctx) => {
   const { refresh_token } = ctx.request.body
-
   if (!refresh_token) {
     ctx.status = 401
     ctx.body = {
@@ -58,8 +57,26 @@ router.post('/refresh', async (ctx) => {
     // 验证refresh_token
     const decoded = await refreshVerify(refresh_token)
 
+    if (!decoded || !decoded.id) {
+      ctx.status = 401
+      ctx.body = {
+        code: '0',
+        message: '无效的刷新令牌',
+      }
+      return
+    }
+
+    // 关键：只挑选业务字段，避免把 exp/iat 等保留字段传入 sign
+    const payload = {
+      id: decoded.id,
+      name: decoded.name,
+      login: decoded.login,
+      node_id: decoded.node_id,
+      avatar_url: decoded.avatar_url,
+    }
+
     // 生成新的access_token
-    const access_token = sign(decoded, '1h')
+    const access_token = sign(payload, '1d')
 
     ctx.body = {
       code: '1',

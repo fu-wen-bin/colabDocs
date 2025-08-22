@@ -1,4 +1,3 @@
-import { Editor } from '@tiptap/react'
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'
 
 // --- UI Primitives ---
@@ -25,17 +24,15 @@ import { MarkButton } from '@/components/tiptap-ui/mark-button'
 import { TextAlignButton } from '@/components/tiptap-ui/text-align-button'
 import { UndoRedoButton } from '@/components/tiptap-ui/undo-redo-button'
 
-interface ToolbarContentProps {
-  editor: Editor | null;
-  isTocVisible?: boolean; // 添加目录可见性状态
-  onToggleToc?: () => void; // 添加切换目录的回调函数
-}
+// 导入zustand状态仓库
+import { useTipTap, useTocVisible, useToggleToc } from '@/stores/editorStore.ts'
 
-export const MainToolbarContent = ({
-                                     editor,
-                                     isTocVisible = false, // 默认目录不可见
-                                     onToggleToc = () => {}, // 默认空函数
-                                   }: ToolbarContentProps) => {
+export const MainToolbarContent = () => {
+
+  // 获取编辑器实例和目录可见性状态
+  const editor = useTipTap()
+  const isTocVisible = useTocVisible()
+  const onToggleToc = useToggleToc()
   if (!editor) return null
 
   return (
@@ -44,7 +41,7 @@ export const MainToolbarContent = ({
       <ToolbarGroup className="mr-2">
         <Button
           data-active={isTocVisible}
-          onClick={onToggleToc}
+          onClick={()=>onToggleToc()}
         >
           {isTocVisible ? <MenuFoldOutlined/> : <MenuUnfoldOutlined/>}
         </Button>

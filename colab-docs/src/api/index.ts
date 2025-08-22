@@ -50,6 +50,7 @@ axios.interceptors.response.use(
         }, {
           headers: { 'Authorization': '' }, // 清空Authorization头
         })
+        console.log(res.data)
 
         if (res.data && res.data.access_token) {
           // 保存新token

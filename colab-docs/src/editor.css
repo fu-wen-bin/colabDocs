@@ -1,6 +1,29 @@
 @import './styles/_variables.scss';
 @import './styles/_keyframe-animations.scss';
 
+/* 添加左侧阴影效果 - 使用伪元素替代额外DOM */
+main[data-side-shadow="left"]::before {
+  content: "";
+  position: fixed; /* fixed定位确保滚动时不会断裂 */
+  left: 280px; /* 调整为与侧边栏宽度一致 */
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  background-image: linear-gradient(to right, rgba(15, 23, 42, 0.05), transparent);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 暗色模式下的阴影 */
+.dark main[data-side-shadow="left"]::before {
+  background-image: linear-gradient(to right, rgba(15, 23, 42, 0.2), transparent);
+}
+
+/* 当侧边栏被折叠时调整阴影位置 */
+main[data-side-shadow="left"]:has(+ :not(.w-64))::before {
+  left: 0;
+}
+
 /* 确保编辑器内容区域居中 */
 .simple-editor-wrapper {
   max-width: 100%;
@@ -16,13 +39,14 @@
 
 /* 工具栏滚动条与滚动行为 */
 .tiptap-toolbar {
-  overflow-x: auto;      /* 启用横向滚动 */
+  overflow-x: auto; /* 启用横向滚动 */
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  white-space: nowrap;   /* 非 flex 环境下兜底不换行 */
+  white-space: nowrap; /* 非 flex 环境下兜底不换行 */
 
   scrollbar-width: thin; /* Firefox */
   /* Webkit浏览器 */
+
   &::-webkit-scrollbar {
     width: 4px;
     height: 4px;
@@ -48,6 +72,7 @@
   }
 
   /* 暗色模式适配 */
+
   .dark & {
     &::-webkit-scrollbar-thumb {
       background-color: rgba(255, 255, 255, 0.2);
@@ -63,7 +88,7 @@
 /* 固定工具栏样式 */
 .fixed-toolbar {
   padding: 4px 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   width: 100%;
   z-index: 100;
   pointer-events: auto !important;

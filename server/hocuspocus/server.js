@@ -21,6 +21,11 @@ async function createHocuspocusServer () {
         // 其他数据库配置
       }),
     ],
+
+    async onConnect (context) {
+
+    },
+
     // 身份验证
     async onAuthenticate ({ token }) {
       if (!token) {

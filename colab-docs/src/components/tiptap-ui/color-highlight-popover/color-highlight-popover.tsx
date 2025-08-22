@@ -91,6 +91,10 @@ export function ColorHighlightPopoverContent({
     "var(--tt-color-highlight-red)",
     "var(--tt-color-highlight-purple)",
     "var(--tt-color-highlight-yellow)",
+    "var(--tt-color-highlight-pink)",
+    "var(--tt-color-highlight-orange)",
+    "var(--tt-color-highlight-brown)",
+    "var(--tt-color-highlight-gray)"
   ]),
 }: ColorHighlightPopoverContentProps) {
   const { handleRemoveHighlight } = useColorHighlight({ editor })
@@ -167,6 +171,10 @@ export function ColorHighlightPopover({
     "var(--tt-color-highlight-red)",
     "var(--tt-color-highlight-purple)",
     "var(--tt-color-highlight-yellow)",
+    "var(--tt-color-highlight-pink)",
+    "var(--tt-color-highlight-orange)",
+    "var(--tt-color-highlight-brown)",
+    "var(--tt-color-highlight-gray)"
   ]),
   hideWhenUnavailable = false,
   onApplied,
