@@ -66,6 +66,9 @@ export default function OauthCallback () {
           const tokenResponse = await axios.post<TokenResponse>('/token/init',
             values)
           console.log('Token响应:', tokenResponse)
+          // 如果是Github注册，调用注册接口将用户信息存入数据库
+          const GithubRegister = await axios.post('/user/register', values)
+          console.log('Github注册响应:', GithubRegister)
 
           // 修改：从tokenResponse.data获取数据
           if (tokenResponse.data) {

@@ -1,0 +1,17 @@
+main[data-side-shadow="left"]::before {
+  content: "";
+  position: fixed; /* fixed定位确保滚动时不会断裂 */
+  left: 280px; /* 调整为与侧边栏宽度一致 */
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  background-image: linear-gradient(to right, rgba(15, 23, 42, 0.05), transparent);
+  pointer-events: none;
+  z-index: 10;
+  border-radius: 1rem; /* 圆角边缘 */
+}
+
+/* 暗色模式下的阴影 */
+.dark main[data-side-shadow="left"]::before {
+  background-image: linear-gradient(to right, rgba(15, 23, 42, 0.2), transparent);
+}

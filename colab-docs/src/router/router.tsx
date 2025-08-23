@@ -4,9 +4,11 @@ import { BrowserRouter, useRoutes } from 'react-router'
 // 使用React.lazy懒加载组件
 const Home = React.lazy(() => import('../pages/Home'))
 const Auth = React.lazy(() => import('../pages/Auth'))
-const Email = React.lazy(() => import('../pages/Auth/Email'))
+const AccountLogin = React.lazy(() => import('../pages/Auth/AccountLogin'))
 const Callback = React.lazy(() => import('../pages/Auth/Callback'))
 const Doc = React.lazy(() => import('../pages/Doc'))
+const Page = React.lazy(() => import('../pages/Doc/Page'))
+const MainContainer = React.lazy(() => import('../pages/Doc/MainContainer'))
 
 const routes = [
   {
@@ -22,8 +24,8 @@ const routes = [
     element: <Auth/>,
   },
   {
-    path: '/auth/email',
-    element: <Email/>,
+    path: '/auth/account',
+    element: <AccountLogin/>,
   },
   {
     path: '/oauth/redirect',
@@ -31,7 +33,20 @@ const routes = [
   },
   {
     path: '/doc',
-    element: <Doc/>
+    element: <Doc/>,
+    children: [
+      {
+        // 当访问 /doc 时，默认渲染这个子组件
+        index: true,
+        element: <MainContainer />,
+      },
+      {
+        // 当访问 /doc/some-id 时，渲染这个子组件
+        // :documentId 是一个动态参数
+        path: ':documentId',
+        element: <MainContainer />,
+      },
+    ],
   }
 ]
 

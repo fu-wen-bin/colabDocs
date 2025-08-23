@@ -12,9 +12,10 @@ export default function MainContainer ({documentId}: { documentId?: string }) {
   const editor = useTipTap()
   const mainRef = useRef<HTMLDivElement>(null)
   return (
+
     <main
       ref={mainRef}
-      className="flex-1 flex flex-col bg-white dark:bg-slate-900 relative min-w-0 overflow-auto"
+      className="flex-1 flex border-[1px] rounded-l-2xl flex-col bg-white dark:bg-slate-900 relative min-w-0 overflow-auto"
       data-side-shadow="left" // 添加属性用于CSS选择器
     >
       <div
@@ -22,7 +23,7 @@ export default function MainContainer ({documentId}: { documentId?: string }) {
       >
         <EditorContext.Provider value={{ editor }}>
           <Toolbar
-            className="tiptap-toolbar fixed-toolbar pointer-events-auto">
+            className=" rounded-tl-2xl tiptap-toolbar fixed-toolbar pointer-events-auto">
             {editor && (
               <MainToolbarContent/>
             )}
@@ -31,9 +32,9 @@ export default function MainContainer ({documentId}: { documentId?: string }) {
       </div>
 
       {/* 正文容器：为工具栏预留空间，避免"上移/遮挡" */}
-      <div className="w-full flex-1 ">
+      <div className="w-full flex-1 border-none">
         <Card
-          className="overflow-hidden h-full rounded-2xl"
+          className="overflow-hidden h-full rounded-none border-none"
           style={{ overflow: 'visible' }} // 可选：避免裁切内部滚动
         >
           <Editor

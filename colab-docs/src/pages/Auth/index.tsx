@@ -1,5 +1,5 @@
 import { Button } from 'antd'
-import { Github, Mail } from 'lucide-react'
+import { Github, User } from 'lucide-react'
 import { useNavigate } from 'react-router'
 
 export default function Login () {
@@ -17,8 +17,8 @@ export default function Login () {
     window.location.href = authUrl
   }
 
-  const handleEmailLogin = () => {
-    navigate('/auth/email')
+  const handleAccountLogin = () => {
+    navigate('/auth/account')
   }
 
   return (
@@ -45,10 +45,10 @@ export default function Login () {
 
           <Button
             className="w-full flex items-center justify-center py-4 px-4 space-x-3 text-gray-700 hover:text-gray-900 border-gray-200 hover:border-gray-300 rounded-xl transition-all duration-300 transform hover:scale-[1.02]"
-            onClick={handleEmailLogin}
+            onClick={handleAccountLogin}
           >
-            <Mail className="mr-2 h-5 w-5"/>
-            <span className="text-base">使用邮箱登录</span>
+            <User className="mr-2 h-5 w-5"/>
+            <span className="text-base">使用账号密码登录</span>
           </Button>
 
           <p

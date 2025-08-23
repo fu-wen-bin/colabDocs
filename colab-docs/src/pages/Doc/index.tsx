@@ -1,11 +1,10 @@
-import { Suspense, useState } from 'react'
+import { Suspense} from 'react'
 import DocumentSidebar from './_components/DocumentSidebar'
-import MainContainer from './MainContainer.tsx'
-import Page from './Page.tsx'
+
+import { Outlet } from 'react-router'
 
 export default function Doc () {
-  const [documentId, setDocumentId] = useState<string | null>('example-doc')
-  return (
+ return (
     <div className="flex h-screen bg-white dark:bg-slate-900 overflow-hidden">
       {/* 侧边栏区域 - 固定宽度设计 */}
       <Suspense>
@@ -13,9 +12,7 @@ export default function Doc () {
       </Suspense>
 
       {/* 主内容区域 */}
-      {
-        documentId ? <MainContainer documentId={documentId}/> : <Page/>
-      }
+      <Outlet/>
 
     </div>
   )
