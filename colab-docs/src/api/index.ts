@@ -171,6 +171,10 @@ export const authUtils = {
       console.error('解析用户信息失败:', e)
       return null
     }
+  },
+
+  clearUser () {
+    localStorage.removeItem('userInfo')
   }
 }
 

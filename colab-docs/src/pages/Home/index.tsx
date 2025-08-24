@@ -10,8 +10,6 @@ import toast from 'react-hot-toast'
 interface UserValues {
   id: number;
   name: string;
-  login: string;
-  node_id: string;
   avatar_url: string;
 }
 
@@ -22,6 +20,12 @@ interface UserResponse {
   code: string;
   message: string;
   data: UserValues; // 与后端 OauthGithub.js 中返回的结构一致
+}
+
+interface LogoutResponse {
+  success: boolean;
+  code: string;
+  message: string;
 }
 
 export default function Index () {
@@ -41,7 +45,7 @@ export default function Index () {
       // 请求用户信息，则认为用户已登录
       try {
         console.log('开始请求用户信息')
-        const response = await axios.get<UserResponse>('/api/user')
+        const response = await axios.get<UserResponse>('/user/getInfo')
         console.log('后端响应全部数据:', response)
 
         // 这里的 response 已经是 response.data，因为拦截器已经处理过
@@ -52,7 +56,7 @@ export default function Index () {
           // 设置用户信息到authUtils中
           authUtils.setUser(userData)
           setIsLoggedIn(true)
-          toast.success(`欢迎回来，${userData.name || userData.login}`)
+          toast.success(`欢迎回来，${userData.name}`)
         } else {
           console.warn('后端返回数据异常:', response)
           setIsLoggedIn(false)
@@ -94,6 +98,18 @@ export default function Index () {
       // 假设用户未登录，跳转到登录页
       navigate('/auth')
     }
+  }
+
+  // 退出登录
+  const handleLogout = async () => {
+    // 清除本地存储的token和用户信息
+    const logoutRes = await axios.post<LogoutResponse>('/user/logout')
+    authUtils.clearUser()
+    authUtils.clearTokens()
+    setIsLoggedIn(false)
+    toast.success(logoutRes.data.message)
+    // 退出登录后跳转到首页
+    navigate('/')
   }
 
   const features = [
@@ -166,18 +182,29 @@ export default function Index () {
           </motion.div>
 
           <motion.div
-            className="flex items-center space-x-6"
+            className="flex items-center space-x-6 transition-all duration-300"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
           >
+            {
+              isLoggedIn ?
+                <Button
+                  onClick={handleLogout}
+                  className="bg-gradient-to-r from-orange-500 to-red-400 hover:bg-white hover:from-white hover:to-white text-white hover:text-orange-500 shadow-lg shadow-orange-500/25 transition-all duration-300 w-[90px] h-[36px] rounded-[8px] flex items-center justify-center border-none"
+                  >
+                  退出登录
+                </Button> : ''
+            }
             <Button
               onClick={handleGetStarted}
-              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:bg-white hover:from-white hover:to-white text-white hover:text-emerald-500 shadow-lg shadow-emerald-500/25 transition-all duration-300 w-[104px] h-[36px] rounded-[8px] flex items-center justify-center border-none"
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:bg-white hover:from-white hover:to-white text-white hover:text-emerald-500 shadow-lg shadow-emerald-500/25 transition-all duration-300 w-[90px] h-[36px] rounded-[8px] flex items-center justify-center border-none"
             >
               {isLoggedIn ? '快速开始' : '免费使用'}
             </Button>
+
           </motion.div>
+
         </div>
       </header>
 

@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.6.1",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@floating-ui/react": "^0.27.15",
     "@hocuspocus/provider": "^3.2.3",
@@ -58,7 +59,6 @@
     "react-router": "^7.7.0",
     "react-router-dom": "^7.7.0",
     "react-textarea-autosize": "^8.5.9",
-    "react-vant": "^3.3.5",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "y-indexeddb": "^9.0.12",
@@ -82,6 +82,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "install": "^0.13.0",
+    "less": "^4.4.1",
     "postcss": "^8.5.6",
     "sass-embedded": "^1.90.0",
     "tailwindcss": "^4.1.11",

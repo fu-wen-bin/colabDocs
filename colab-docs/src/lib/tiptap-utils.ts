@@ -1,39 +1,39 @@
-import type { Node as TiptapNode } from "@tiptap/pm/model"
-import { NodeSelection, Selection, TextSelection } from "@tiptap/pm/state"
-import type { Editor } from "@tiptap/react"
+import type { Node as TiptapNode } from '@tiptap/pm/model'
+import { NodeSelection, Selection, TextSelection } from '@tiptap/pm/state'
+import type { Editor } from '@tiptap/react'
 
 export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
 export const MAC_SYMBOLS: Record<string, string> = {
-  mod: "⌘",
-  command: "⌘",
-  meta: "⌘",
-  ctrl: "⌃",
-  control: "⌃",
-  alt: "⌥",
-  option: "⌥",
-  shift: "⇧",
-  backspace: "Del",
-  delete: "⌦",
-  enter: "⏎",
-  escape: "⎋",
-  capslock: "⇪",
+  mod: '⌘',
+  command: '⌘',
+  meta: '⌘',
+  ctrl: '⌃',
+  control: '⌃',
+  alt: '⌥',
+  option: '⌥',
+  shift: '⇧',
+  backspace: 'Del',
+  delete: '⌦',
+  enter: '⏎',
+  escape: '⎋',
+  capslock: '⇪',
 } as const
 
-export function cn(
+export function cn (
   ...classes: (string | boolean | undefined | null)[]
 ): string {
-  return classes.filter(Boolean).join(" ")
+  return classes.filter(Boolean).join(' ')
 }
 
 /**
  * Determines if the current platform is macOS
  * @returns boolean indicating if the current platform is Mac
  */
-export function isMac(): boolean {
+export function isMac (): boolean {
   return (
-    typeof navigator !== "undefined" &&
-    navigator.platform.toLowerCase().includes("mac")
+    typeof navigator !== 'undefined' &&
+    navigator.platform.toLowerCase().includes('mac')
   )
 }
 
@@ -47,7 +47,7 @@ export function isMac(): boolean {
 export const formatShortcutKey = (
   key: string,
   isMac: boolean,
-  capitalize: boolean = true
+  capitalize: boolean = true,
 ) => {
   if (isMac) {
     const lowerKey = key.toLowerCase()
@@ -59,17 +59,15 @@ export const formatShortcutKey = (
 
 /**
  * Parses a shortcut key string into an array of formatted key symbols
- * @param shortcutKeys - The string of shortcut keys (e.g., "ctrl-alt-shift")
- * @param delimiter - The delimiter used to split the keys (default: "-")
- * @param capitalize - Whether to capitalize the keys (default: true)
  * @returns Array of formatted shortcut key symbols
+ * @param props
  */
 export const parseShortcutKeys = (props: {
   shortcutKeys: string | undefined
   delimiter?: string
   capitalize?: boolean
 }) => {
-  const { shortcutKeys, delimiter = "+", capitalize = true } = props
+  const { shortcutKeys, delimiter = '+', capitalize = true } = props
 
   if (!shortcutKeys) return []
 
@@ -87,7 +85,7 @@ export const parseShortcutKeys = (props: {
  */
 export const isMarkInSchema = (
   markName: string,
-  editor: Editor | null
+  editor: Editor | null,
 ): boolean => {
   if (!editor?.schema) return false
   return editor.schema.spec.marks.get(markName) !== undefined
@@ -101,7 +99,7 @@ export const isMarkInSchema = (
  */
 export const isNodeInSchema = (
   nodeName: string,
-  editor: Editor | null
+  editor: Editor | null,
 ): boolean => {
   if (!editor?.schema) return false
   return editor.schema.spec.nodes.get(nodeName) !== undefined
@@ -112,7 +110,7 @@ export const isNodeInSchema = (
  * @param editor - The editor instance
  * @returns boolean indicating if the focus was moved
  */
-export function focusNextNode(editor: Editor) {
+export function focusNextNode (editor: Editor) {
   const { state, view } = editor
   const { doc, selection } = state
 
@@ -124,7 +122,7 @@ export function focusNextNode(editor: Editor) {
 
   const paragraphType = state.schema.nodes.paragraph
   if (!paragraphType) {
-    console.warn("No paragraph node type found in schema.")
+    console.warn('No paragraph node type found in schema.')
     return false
   }
 
@@ -141,11 +139,11 @@ export function focusNextNode(editor: Editor) {
 
 /**
  * Checks if a value is a valid number (not null, undefined, or NaN)
- * @param value - The value to check
  * @returns boolean indicating if the value is a valid number
+ * @param pos
  */
-export function isValidPosition(pos: number | null | undefined): pos is number {
-  return typeof pos === "number" && pos >= 0
+export function isValidPosition (pos: number | null | undefined): pos is number {
+  return typeof pos === 'number' && pos >= 0
 }
 
 /**
@@ -154,9 +152,9 @@ export function isValidPosition(pos: number | null | undefined): pos is number {
  * @param extensionNames - A single extension name or an array of names to check
  * @returns True if at least one of the extensions is available, false otherwise
  */
-export function isExtensionAvailable(
+export function isExtensionAvailable (
   editor: Editor | null,
-  extensionNames: string | string[]
+  extensionNames: string | string[],
 ): boolean {
   if (!editor) return false
 
@@ -165,12 +163,13 @@ export function isExtensionAvailable(
     : [extensionNames]
 
   const found = names.some((name) =>
-    editor.extensionManager.extensions.some((ext) => ext.name === name)
+    editor.extensionManager.extensions.some((ext) => ext.name === name),
   )
 
   if (!found) {
     console.warn(
-      `None of the extensions [${names.join(", ")}] were found in the editor schema. Ensure they are included in the editor configuration.`
+      `None of the extensions [${names.join(
+        ', ')}] were found in the editor schema. Ensure they are included in the editor configuration.`,
     )
   }
 
@@ -183,7 +182,7 @@ export function isExtensionAvailable(
  * @param position The position in the document to find the node
  * @returns The node at the specified position, or null if not found
  */
-export function findNodeAtPosition(editor: Editor, position: number) {
+export function findNodeAtPosition (editor: Editor, position: number) {
   try {
     const node = editor.state.doc.nodeAt(position)
     if (!node) {
@@ -205,7 +204,7 @@ export function findNodeAtPosition(editor: Editor, position: number) {
  * @param props.nodePos The position of the node to find (optional if node is provided)
  * @returns An object with the position and node, or null if not found
  */
-export function findNodePosition(props: {
+export function findNodePosition (props: {
   editor: Editor | null
   node?: TiptapNode | null
   nodePos?: number | null
@@ -260,9 +259,9 @@ export function findNodePosition(props: {
  * @param types An array of node type names to check against
  * @returns boolean indicating if the selected node matches any of the specified types
  */
-export function isNodeTypeSelected(
+export function isNodeTypeSelected (
   editor: Editor | null,
-  types: string[] = []
+  types: string[] = [],
 ): boolean {
   if (!editor || !editor.state.selection) return false
 
@@ -289,30 +288,48 @@ export function isNodeTypeSelected(
 export const handleImageUpload = async (
   file: File,
   onProgress?: (event: { progress: number }) => void,
-  abortSignal?: AbortSignal
+  abortSignal?: AbortSignal,
 ): Promise<string> => {
   // Validate file
   if (!file) {
-    throw new Error("No file provided")
+    throw new Error('未提供文件！')
+  }
+
+  if (!file.type.startsWith('image/')) {
+    throw new Error('请正确上传图片类型！')
   }
 
   if (file.size > MAX_FILE_SIZE) {
     throw new Error(
-      `File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)`
+      `文件大小超出最大允许值(${MAX_FILE_SIZE / (1024 * 1024)}MB)`,
     )
   }
 
-  // For demo/testing: Simulate upload progress. In production, replace the following code
-  // with your own upload implementation.
-  for (let progress = 0; progress <= 100; progress += 10) {
-    if (abortSignal?.aborted) {
-      throw new Error("Upload cancelled")
-    }
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    onProgress?.({ progress })
+  if (abortSignal?.aborted) {
+    throw new Error('上传取消')
   }
+  // 转换文件为Base64
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
 
-  return "/images/tiptap-ui-placeholder-image.jpg"
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100)
+        onProgress?.({ progress })
+      }
+    }
+
+    reader.onload = () => {
+      if (abortSignal?.aborted) {
+        reject(new Error('上传取消'))
+      } else {
+        resolve(reader.result as string)  // 返回Base64
+      }
+    }
+
+    reader.onerror = () => reject(new Error('文件读取失败'))
+    reader.readAsDataURL(file)  // 读取为Base64
+  })
 }
 
 type ProtocolOptions = {
@@ -338,27 +355,27 @@ const ATTR_WHITESPACE =
   // eslint-disable-next-line no-control-regex
   /[\u0000-\u0020\u00A0\u1680\u180E\u2000-\u2029\u205F\u3000]/g
 
-export function isAllowedUri(
+export function isAllowedUri (
   uri: string | undefined,
-  protocols?: ProtocolConfig
+  protocols?: ProtocolConfig,
 ) {
   const allowedProtocols: string[] = [
-    "http",
-    "https",
-    "ftp",
-    "ftps",
-    "mailto",
-    "tel",
-    "callto",
-    "sms",
-    "cid",
-    "xmpp",
+    'http',
+    'https',
+    'ftp',
+    'ftps',
+    'mailto',
+    'tel',
+    'callto',
+    'sms',
+    'cid',
+    'xmpp',
   ]
 
   if (protocols) {
     protocols.forEach((protocol) => {
       const nextProtocol =
-        typeof protocol === "string" ? protocol : protocol.scheme
+        typeof protocol === 'string' ? protocol : protocol.scheme
 
       if (nextProtocol) {
         allowedProtocols.push(nextProtocol)
@@ -368,20 +385,20 @@ export function isAllowedUri(
 
   return (
     !uri ||
-    uri.replace(ATTR_WHITESPACE, "").match(
+    uri.replace(ATTR_WHITESPACE, '').match(
       new RegExp(
         // eslint-disable-next-line no-useless-escape
-        `^(?:(?:${allowedProtocols.join("|")}):|[^a-z]|[a-z0-9+.\-]+(?:[^a-z+.\-:]|$))`,
-        "i"
-      )
+        `^(?:(?:${allowedProtocols.join('|')}):|[^a-z]|[a-z0-9+.\-]+(?:[^a-z+.\-:]|$))`,
+        'i',
+      ),
     )
   )
 }
 
-export function sanitizeUrl(
+export function sanitizeUrl (
   inputUrl: string,
   baseUrl: string,
-  protocols?: ProtocolConfig
+  protocols?: ProtocolConfig,
 ): string {
   try {
     const url = new URL(inputUrl, baseUrl)
@@ -392,5 +409,5 @@ export function sanitizeUrl(
   } catch {
     // If URL creation fails, it's considered invalid
   }
-  return "#"
+  return '#'
 }

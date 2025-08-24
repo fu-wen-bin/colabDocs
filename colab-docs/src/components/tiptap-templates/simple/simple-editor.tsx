@@ -51,9 +51,10 @@ import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { ws_server_url } from '@/lib/defaultConfig.ts'
 import * as Y from 'yjs'
-import { authUtils } from '@/api'
+import axios,{ authUtils } from '@/api'
 import { getCursorColorByUserId } from '@/lib/cursor_color.ts'
 import { useEditorStore } from '@/stores/editorStore'
+import { useSearchParams } from 'react-router'
 
 // 修改接口定义，添加 documentId 属性
 interface SimpleEditorProps {
@@ -98,6 +99,7 @@ export function SimpleEditor ({
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
     'connecting')
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams()
 
   // 创建Y.Doc
   useEffect(() => {
@@ -108,12 +110,12 @@ export function SimpleEditor ({
     }
   }, [])
 
+  // 获取对应id文件的内容
   const getDocumentContent = async () => {
+    const fileId = searchParams.get('fileId')
     try {
       setLoading(true);
-      const result = await axios.get('/doc/getContent', {
-
-      })
+      const result = await axios.post('/doc/getContent', {fileId})
 
     } catch {
 
@@ -201,7 +203,7 @@ export function SimpleEditor ({
         onConnect: () => {
           console.log('[Hocuspocus] connected')
           setConnectionStatus('syncing')
-          getDocumentContent()
+          //getDocumentContent()
         },
         onDisconnect: () => {
           console.log('[Hocuspocus] disconnected')
@@ -303,7 +305,9 @@ export function SimpleEditor ({
       TaskList,
       TaskItem.configure({ nested: true }),
       Highlight.configure({ multicolor: true }),
-      Image,
+      Image.configure({
+        allowBase64: true,
+      }),
       Typography,
       Superscript,
       Subscript,
@@ -313,7 +317,7 @@ export function SimpleEditor ({
         maxSize: MAX_FILE_SIZE,
         limit: 3,
         upload: handleImageUpload,
-        onError: (error) => console.error('Upload failed:', error),
+        onError: (error) => console.error('上传出错：', error),
       }),
       // 新增：协同编辑扩展（在 provider 就绪时启用）
       ...(doc
@@ -351,8 +355,21 @@ export function SimpleEditor ({
     if (editor) {
       setEditor(editor)
     }
-
   }, [editor])
+
+  // 设置初始内容
+  // useEffect(() => {
+  //   if (!editor || !initialContent || !isLocalLoaded) return;
+  //
+  //   if (editor && !editor.isDestroyed) {
+  //     // 使用 setTimeout 避免在渲染期间同步设置内容
+  //     setTimeout(() => {
+  //       if (editor && !editor.isDestroyed) {
+  //         editor.commands.setContent(initialContent);
+  //       }
+  //     }, 0);
+  //   }
+  // }, [editor, initialContent, isLocalLoaded]);
 
   // 将“光标可见性”逻辑移动到仅在 editor 存在时才渲染的子组件，避免未挂载时报错
   const ToolbarWithCursor = useMemo(() => {

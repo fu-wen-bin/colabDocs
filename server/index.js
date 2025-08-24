@@ -9,8 +9,13 @@ const { createHocuspocusServer } = require('./hocuspocus/server.js')
 // 兼容路由的 CommonJS/ESM 导出
 const oauthRouterModule = require('./router/OauthGithub.js')
 const tokenRouterModule = require('./router/token.js')
+const userRouterModule = require('./router/user.js')
+const documentsRouterModule = require('./router/documents.js')
+
 const oauthRouter = oauthRouterModule.default || oauthRouterModule
 const tokenRouter = tokenRouterModule.default || tokenRouterModule
+const userRouter = userRouterModule.default || userRouterModule
+const documentsRouter = documentsRouterModule.default || documentsRouterModule
 
 // 创建 Koa 应用
 const app = new Koa()
@@ -49,6 +54,9 @@ app.use(bodyParser(
 // 2. userRouter.routes() 就是 user.js 中所有被定义好的路由的回调函数
 app.use(oauthRouter.routes()).use(oauthRouter.allowedMethods())
 app.use(tokenRouter.routes()).use(tokenRouter.allowedMethods())
+app.use(userRouter.routes()).use(userRouter.allowedMethods())
+app.use(documentsRouter.routes()).use(documentsRouter.allowedMethods())
+
 
 // 启动流程：分别启动 WS 与 HTTP
 ;(async () => {

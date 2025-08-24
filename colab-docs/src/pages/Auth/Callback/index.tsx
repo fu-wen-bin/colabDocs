@@ -7,20 +7,26 @@ import toast from 'react-hot-toast'
 interface UserValues {
   id: number;
   name: string;
-  login: string;
-  node_id: string;
   avatar_url: string;
 }
 
 // Token响应接口，使其与后端返回结构匹配
 interface TokenResponse {
-
   code: string;
   message: string;
   userdata: UserValues;
   access_token: string;
   refresh_token: string;
+}
 
+// Github响应接口，使其与后端返回结构匹配
+interface GithubUser {
+  code: string;
+  message: string;
+  id: number;
+  name: string;
+  avatar_url: string;
+  create_time: Date;
 }
 
 export default function OauthCallback () {
@@ -55,33 +61,32 @@ export default function OauthCallback () {
         const values: UserValues = {
           id: userData.id,
           name: userData.name,
-          login: userData.login,
-          node_id: userData.node_id,
           avatar_url: userData.avatar_url,
         }
         console.log('用户信息:', values)
 
         if (response.data.success) {
           // 后端响应成功后发出请求，生成jwt的token
-          const tokenResponse = await axios.post<TokenResponse>('/token/init',
+          const tokenResponse = await axios.post<TokenResponse>(
+            '/token/GitInit',
             values)
           console.log('Token响应:', tokenResponse)
-          // 如果是Github注册，调用注册接口将用户信息存入数据库
-          const GithubRegister = await axios.post('/user/register', values)
-          console.log('Github注册响应:', GithubRegister)
 
-          // 修改：从tokenResponse.data获取数据
+          // 从tokenResponse.data获取数据
           if (tokenResponse.data) {
             // 使用authUtils中的方法保存token
             authUtils.setTokens(tokenResponse.data.access_token,
               tokenResponse.data.refresh_token)
 
+            const GitUser = await axios.post<GithubUser>('/user/githubRegister',
+              values)
+            console.log('Github用户写入响应:', GitUser)
+            toast.success(GitUser.data.message)
+
             // 将data转成json字符串存储到浏览器中
             localStorage.setItem('userInfo',
               JSON.stringify(tokenResponse.data.userdata))
 
-            // 登录成功弹窗
-            toast.success(tokenResponse.data.message)
             navigate('/')
           }
         } else {

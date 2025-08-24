@@ -77,10 +77,7 @@ router.get('/oauth/callback', async (ctx) => {
       message: '登录成功',
       id: result.data.id,
       name: result.data.name,
-      login: result.data.login,
-      node_id: result.data.node_id,
       avatar_url: result.data.avatar_url,
-
     }
   } catch (error) {
     console.error('OAuth处理错误:', error.message)
@@ -90,76 +87,6 @@ router.get('/oauth/callback', async (ctx) => {
     ctx.status = 500
     ctx.body = { error: '授权处理失败' }
   }
-})
-
-// 获取当前用户信息API
-router.get('/api/user', verify(), async (ctx) => {
-  const token = ctx.cookies.get('github_token')
-  console.log('获取到的GitHub令牌:', token)
-
-  if (!token) {
-    ctx.status = 401
-    ctx.body = { error: '未登录' }
-    return
-  }
-
-  try {
-    console.log('准备请求GitHub API...')
-    const result = await axios({
-      method: 'get',
-      url: `https://api.github.com/user`,
-      headers: {
-        accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-        'User-Agent': 'ColabDocs', // 添加User-Agent头，GitHub API要求
-      },
-    })
-
-    console.log('GitHub API响应成功:', result.data.login)
-    ctx.status = 200
-    ctx.body = {
-      success: true,
-      code: '1', // 添加code字段，保持接口一致性
-      message: '获取用户信息成功',
-      data: {
-        id: result.data.id,
-        name: result.data.name,
-        login: result.data.login,
-        node_id: result.data.node_id,
-        avatar_url: result.data.avatar_url,
-      },
-
-    }
-  } catch (error) {
-    // 增强错误日志
-    console.error('GitHub API请求失败:', error.message)
-    if (error.response) {
-      console.error('错误状态码:', error.response.status)
-      console.error('错误详情:', error.response.data)
-    }
-
-    // 令牌可能已失效
-    ctx.cookies.set('github_token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0,
-    })
-    ctx.status = 401
-    ctx.body = { error: '登录已过期' }
-  }
-})
-
-// 注销API
-router.post('/api/logout', (ctx) => {
-  ctx.cookies.set('github_token', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 0,
-    // path: '/',
-  })
-  ctx.body = { success: true }
 })
 
 module.exports = router

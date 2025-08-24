@@ -11,6 +11,8 @@ async function createHocuspocusServer () {
 
   return new Server({
     port: ws_port, // 使用配置端口，避免与前端不一致
+    // 设置服务器级别的防抖
+    debounce: 3000, // Hocuspocus 内置防抖，3秒内的多次更新会合并
     extensions: [
       // 使用自定义日志扩展代替官方 Logger
       createLoggerExtension(),

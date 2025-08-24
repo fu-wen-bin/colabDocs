@@ -6,18 +6,16 @@ const { verify } = require('../utils/jwt')
 router.prefix('/token') // 路由前缀，所有路由都以 /token 开头
 
 // 初始化access_token和refresh_token
-router.post('/init', async (ctx) => {
+router.post('/GitInit', async (ctx) => {
   // 1. 获取请求体中的数据
   // 从GitHub OAuth回调获取的用户信息
-  const { id, name, login, node_id, avatar_url } = ctx.request.body
+  const { id, name, avatar_url } = ctx.request.body
 
   try {
     // 这里我们不需要查询数据库，直接根据GitHub返回的信息生成token
     let data = {
       id,
       name,
-      login,
-      node_id,
       avatar_url,
     }
 
@@ -70,8 +68,6 @@ router.post('/refresh', async (ctx) => {
     const payload = {
       id: decoded.id,
       name: decoded.name,
-      login: decoded.login,
-      node_id: decoded.node_id,
       avatar_url: decoded.avatar_url,
     }
 
