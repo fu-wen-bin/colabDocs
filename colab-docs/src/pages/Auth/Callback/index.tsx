@@ -81,7 +81,7 @@ export default function OauthCallback () {
             const GitUser = await axios.post<GithubUser>('/user/githubRegister',
               values)
             console.log('Github用户写入响应:', GitUser)
-            toast.success(GitUser.data.message)
+            toast.success(GitUser.data.message,{id:'loginInfo'})
 
             // 将data转成json字符串存储到浏览器中
             localStorage.setItem('userInfo',

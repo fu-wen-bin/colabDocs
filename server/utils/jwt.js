@@ -48,8 +48,22 @@ function refreshVerify (token) {
   }
 }
 
+function decode (token) {
+  try {
+    const decoded = jwt.verify(token, 'ColabDocs')
+
+    const userId = decoded.id
+    const username = decoded.name
+    const avatar_url = decoded.avatar_url
+    return { userId, username, avatar_url }
+  } catch (error) {
+    return null
+  }
+}
+
 module.exports = {
   sign,
+  decode,
   verify,
   refreshVerify,
 }

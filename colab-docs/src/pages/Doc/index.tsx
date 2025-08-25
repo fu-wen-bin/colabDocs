@@ -3,7 +3,7 @@ import DocumentSidebar from './_components/DocumentSidebar'
 
 import { useSearchParams } from 'react-router'
 import MainContainer from '@/pages/Doc/MainContainer.tsx'
-//import Page from '@/pages/Doc/Page.tsx'
+import Page from '@/pages/Doc/Page.tsx'
 
 export default function Doc () {
   const [searchParams] = useSearchParams();
@@ -14,9 +14,10 @@ export default function Doc () {
   // 根据是否有 fileId 来决定渲染哪个组件
   const mainContent = useMemo(() => {
     if (fileId) {
+      // 存在则渲染编辑器组件
       return <MainContainer />;
     } else {
-      return <MainContainer />;
+      return <Page />;
     }
   }, [fileId]);
  return (

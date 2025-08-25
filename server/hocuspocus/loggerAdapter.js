@@ -20,14 +20,7 @@ function createLoggerExtension () {
 
     // 当文档被存储时
     onStoreDocument: ({ documentName }) => {
-      logger.debug(`文档存储: ${documentName}`)
-    },
-
-    // 连接事件
-    onConnect: ({ documentName, context, socketId, clientsCount }) => {
-      const user = context?.user?.name || '未知用户'
-      logger.info(
-        `用户连接: ${user}, 文档: ${documentName}, 连接ID: ${socketId}, 当前连接数: ${clientsCount}`)
+      logger.debug(`文档已存储：${documentName}`)
     },
 
     // 断开连接事件
@@ -37,11 +30,6 @@ function createLoggerExtension () {
         `用户断开连接: ${user}, 文档: ${documentName}, 连接ID: ${socketId}, 当前连接数: ${clientsCount}`)
     },
 
-    // 身份验证事件
-    onAuthenticate: ({ documentName, token }) => {
-      logger.debug(
-        `身份验证请求: 文档: ${documentName}, token存在: ${!!token}`)
-    },
 
     // 授权事件
     onAuthorize: ({ documentName, context }) => {

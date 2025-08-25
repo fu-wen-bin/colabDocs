@@ -1,5 +1,6 @@
 const { logger } = require('../utils/logger.js')
 const { ws_port } = require('../base.config.js')
+const jwt = require('jsonwebtoken')
 
 // 使用动态 import 以在 CommonJS 中加载可能为 ESM-only 的依赖
 async function createHocuspocusServer () {
@@ -24,10 +25,6 @@ async function createHocuspocusServer () {
       }),
     ],
 
-    async onConnect (context) {
-
-    },
-
     // 身份验证
     async onAuthenticate ({ token }) {
       if (!token) {
@@ -38,12 +35,15 @@ async function createHocuspocusServer () {
       }
 
       try {
-        // 实际的 token 验证逻辑
-        // ...
 
-        logger.debug('身份验证成功')
+        const decoded = jwt.verify(token, 'ColabDocs')
+
+        const userId = decoded.id
+        const username = decoded.name
+
+        logger.debug(`验证成功: 用户ID: ${userId}, 用户名: ${username}`)
         return {
-          user: { id: 'user-id', name: 'Username' },
+          user: { id: userId, name: username },
         }
       } catch (error) {
         logger.error('身份验证错误', error)
@@ -51,11 +51,13 @@ async function createHocuspocusServer () {
       }
     },
 
-    // 文档存储
-    async onStoreDocument (data) {
-      logger.debug(`文档 ${data.documentName} 已存储`)
-      // 额外的存储逻辑
+    // 连接事件
+    async onConnect ({ documentName, context, socketId, clientsCount }) {
+      const user = context?.user?.name || '未知用户'
+      logger.info(
+        `用户连接: ${user}, 文档: ${documentName}, 连接ID: ${socketId}, 当前连接数: ${clientsCount}`)
     },
+
   })
 }
 

@@ -35,13 +35,13 @@ export default function AccountLogin () {
              // 将data转成json字符串存储到浏览器中方便后续使用用户信息
              localStorage.setItem('userInfo', JSON.stringify(res.data.userdata))
              // 登录成功弹窗
-             toast.success(res.data.message)
+             toast.success(res.data.message,{id:'loginInfo'})
              navigate('/doc')
            })
     }
     if (endpoint === '/user/accountRegister') { // 如果现在是注册模式，调用注册接口
       const res = await axios.post(endpoint, values)
-      toast.success(res.data.message)
+      toast.success(res.data.message,{id:'loginInfo'})
       setIsRegisterMode(false) // 切换回登录模式
       // 直接设置表单字段值
       form.setFieldsValue({

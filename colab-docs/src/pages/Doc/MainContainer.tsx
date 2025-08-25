@@ -8,7 +8,7 @@ import {
 import { useTipTap } from '@/stores/editorStore.ts'
 import { useRef } from 'react'
 
-export default function MainContainer ({documentId}: { documentId?: string }) {
+export default function MainContainer () {
   const editor = useTipTap()
   const mainRef = useRef<HTMLDivElement>(null)
   return (
@@ -37,9 +37,7 @@ export default function MainContainer ({documentId}: { documentId?: string }) {
           className="overflow-hidden h-full rounded-none border-none"
           style={{ overflow: 'visible' }} // 可选：避免裁切内部滚动
         >
-          <Editor
-            documentId={documentId}
-          />
+          <Editor/>
         </Card>
       </div>
     </main>

@@ -19,6 +19,7 @@
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/themes": "^3.2.1",
     "@tailwindcss/vite": "^4.1.11",
+    "@tiptap-pro/extension-export": "^3.2.0",
     "@tiptap/core": "^3.2.0",
     "@tiptap/extension-collaboration": "^3.2.0",
     "@tiptap/extension-collaboration-caret": "^3.2.0",

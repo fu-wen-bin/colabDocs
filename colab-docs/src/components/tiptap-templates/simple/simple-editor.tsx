@@ -43,8 +43,6 @@ import { handleImageUpload, MAX_FILE_SIZE } from '@/lib/tiptap-utils'
 // --- Styles ---
 import '@/components/tiptap-templates/simple/simple-editor.scss'
 
-import content from '@/components/tiptap-templates/simple/data/content.json'
-
 // 协同编辑相关
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import Collaboration from '@tiptap/extension-collaboration'
@@ -55,11 +53,11 @@ import axios,{ authUtils } from '@/api'
 import { getCursorColorByUserId } from '@/lib/cursor_color.ts'
 import { useEditorStore } from '@/stores/editorStore'
 import { useSearchParams } from 'react-router'
+import toast from 'react-hot-toast'
 
-// 修改接口定义，添加 documentId 属性
+// 定义工具栏是否展示参数
 interface SimpleEditorProps {
   showToolbar?: boolean;
-  documentId?: string; // 新增：协作文档ID
 }
 
 interface CollaborationUser {
@@ -78,7 +76,6 @@ type ConnectionStatus =
 
 export function SimpleEditor ({
                                 showToolbar = true,
-                                documentId = 'default-doc', // 新增：默认文档ID
                               }: SimpleEditorProps) {
   const isMobile = useIsMobile()
   const { height } = useWindowSize()
@@ -90,17 +87,30 @@ export function SimpleEditor ({
   const [isEditorReady, setIsEditorReady] = useState(false)
   const [authToken, setAuthToken] = useState<string>('')
   const [currentUser, setCurrentUser] = useState<CollaborationUser | null>(null)
+  // @ts-ignore
   const [connectedUsers, setConnectedUsers] = useState<CollaborationUser[]>([])
+  // @ts-ignore
   const [isClientReady, setIsClientReady] = useState(false)
-  const setEditor = useEditorStore((state) => state.setEditor)
+  // @ts-ignore
   const [isServerSynced, setIsServerSynced] = useState(false)
   const hasUnsyncedChangesRef = useRef(false)
+  // @ts-ignore
   const [isLocalLoaded, setIsLocalLoaded] = useState(false)
+  // @ts-ignore
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
     'connecting')
+  // @ts-ignore
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams()
+  const setEditor = useEditorStore((state) => state.setEditor)
+  const  fileId  = useEditorStore((state) => state.fileId)
+  const  setFileId  = useEditorStore((state) => state.setFileId)
+  const  initialContent  = useEditorStore((state) => state.initialContent)
+  const  setInitialContent  = useEditorStore((state) => state.setInitialContent)
 
+
+  setFileId(searchParams.get('fileId'))
+  console.log('fileId', fileId)
   // 创建Y.Doc
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -112,19 +122,34 @@ export function SimpleEditor ({
 
   // 获取对应id文件的内容
   const getDocumentContent = async () => {
-    const fileId = searchParams.get('fileId')
     try {
       setLoading(true);
       const result = await axios.post('/doc/getContent', {fileId})
+      console.log('获取到的文档内容:', result.data) // 调试日志
+      if(result.data.code === '1' && result.data.content){  // 修改：检查 code 而不是 success
+        // 将字符串内容解析为 JSON
+        const content = typeof result.data.content === 'string'
+          ? JSON.parse(result.data.content)
+          : result.data.content;
+        console.log('解析后的内容:', content) // 调试日志
+        setInitialContent(content);
 
-    } catch {
-
+        // 如果编辑器已经准备好，立即设置内容
+        if (editor && !editor.isDestroyed) {
+          editor.commands.setContent(content);
+        }
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('获取文档内容失败:', error)
+      toast.error('获取文档内容失败')
+      setLoading(false);
     }
   }
 
   // 从localStorage获取当前用户信息
   useEffect(() => {
-    if (!authToken || !documentId || documentId === '') return
+    if (!authToken || !fileId || fileId === '') return
 
     try {
       const userProfileStr = authUtils.getUser()
@@ -140,15 +165,15 @@ export function SimpleEditor ({
     } catch (error) {
       console.error('解析用户信息失败:', error)
     }
-  }, [authToken, documentId])
+  }, [authToken, fileId])
 
   // 本地持久化 - IndexedDB 只在浏览器中可用
   useEffect(() => {
-    if (!documentId || !doc || typeof window === 'undefined') return
+    if (!fileId || !doc || typeof window === 'undefined') return
 
     const persistence = new IndexeddbPersistence(
-      `tiptap-collaborative-${documentId}`, doc)
-    const localStorageKey = `offline-edits-${documentId}`
+      `tiptap-collaborative-${fileId}`, doc)
+    const localStorageKey = `offline-edits-${fileId}`
 
     persistence.on('synced', () => {
       setIsLocalLoaded(true)
@@ -160,7 +185,7 @@ export function SimpleEditor ({
 
     const handleTransaction = () => {
       localStorage.setItem(localStorageKey, 'true')
-      localStorage.setItem(`last-offline-edit-${documentId}`,
+      localStorage.setItem(`last-offline-edit-${fileId}`,
         new Date().toISOString())
       hasUnsyncedChangesRef.current = true
     }
@@ -171,16 +196,22 @@ export function SimpleEditor ({
     return () => {
       persistence.destroy()
     }
-  }, [documentId, doc])
+  }, [fileId, doc])
+
+  // 修改：当 fileId 变化时立即获取内容
+  useEffect(() => {
+    if (fileId && authToken) {
+      getDocumentContent();
+    }
+  }, [fileId, authToken]);
 
   // 确保编辑器和服务器准备就绪
   useEffect(() => {
-
-    if (!authToken || !documentId || !doc || !isEditorReady) return
+    if (!authToken || !fileId || !doc || !isEditorReady) return
 
     // 如果已经有连接且参数相同，不重复创建
     if (providerRef.current && providerRef.current.configuration.name ===
-        documentId) {
+        fileId) {
       return
     }
 
@@ -193,17 +224,18 @@ export function SimpleEditor ({
     const connectionTimer = setTimeout(() => {
       const clearOfflineEdits = () => {
         hasUnsyncedChangesRef.current = false
-        localStorage.removeItem(`offline-edits-${documentId}`)
+        localStorage.removeItem(`offline-edits-${fileId}`)
       }
       const hocuspocusProvider = new HocuspocusProvider({
         url: ws_server_url, // TODO: 与后端 ws_port 保持一致
-        name: documentId,
+        name: fileId,
         document: doc,
         token: authToken,
+
         onConnect: () => {
           console.log('[Hocuspocus] connected')
           setConnectionStatus('syncing')
-          //getDocumentContent()
+          // 移除这里的 getDocumentContent() 调用，避免重复获取
         },
         onDisconnect: () => {
           console.log('[Hocuspocus] disconnected')
@@ -226,7 +258,7 @@ export function SimpleEditor ({
       })
       providerRef.current = hocuspocusProvider
       setProvider(hocuspocusProvider)
-    }, 300) // 300ms延迟，确保编辑器完全稳定
+    }, 300)
     return () => {
       clearTimeout(connectionTimer)
 
@@ -240,7 +272,7 @@ export function SimpleEditor ({
         providerRef.current = null
       }
     }
-  }, [documentId, isEditorReady])
+  }, [fileId, isEditorReady, authToken, doc]) // 添加必要的依赖
 
   // 设置用户awareness信息
   useEffect(() => {
@@ -281,6 +313,7 @@ export function SimpleEditor ({
     return () => provider.awareness?.off('update', handleAwarenessUpdate)
   }, [provider, currentUser])
 
+  console.log(initialContent, 'initialContent')
   // 设置编辑器准备就绪状态
   const editor = useEditor({
     autofocus: true,
@@ -326,7 +359,7 @@ export function SimpleEditor ({
       ...(provider && currentUser && doc
         ? [CollaborationCaret.configure({ provider, user: currentUser })] : []),
     ],
-    content: provider ? undefined : content,
+    content: '', // 初始内容为空
     onSelectionUpdate: ({ editor }) => {
       // 延迟DOM操作，避免在渲染期间触发
       requestAnimationFrame(() => {
@@ -349,27 +382,27 @@ export function SimpleEditor ({
     onUpdate: () => {
       // 防止在更新期间的意外状态变更
     },
-  }, [provider, doc, currentUser]) // 依赖 provider 和 doc，确保协作扩展正确初始化
+  }, [provider, doc, currentUser]) //
 
+  // 将 editor 实例存入全局状态
   useEffect(() => {
     if (editor) {
       setEditor(editor)
     }
   }, [editor])
 
-  // 设置初始内容
-  // useEffect(() => {
-  //   if (!editor || !initialContent || !isLocalLoaded) return;
-  //
-  //   if (editor && !editor.isDestroyed) {
-  //     // 使用 setTimeout 避免在渲染期间同步设置内容
-  //     setTimeout(() => {
-  //       if (editor && !editor.isDestroyed) {
-  //         editor.commands.setContent(initialContent);
-  //       }
-  //     }, 0);
-  //   }
-  // }, [editor, initialContent, isLocalLoaded]);
+  // 修改内容设置逻辑
+  useEffect(() => {
+    if (editor && !editor.isDestroyed && initialContent && initialContent.content) {
+      // 使用 requestAnimationFrame 确保在下一帧设置内容
+      requestAnimationFrame(() => {
+        if (editor && !editor.isDestroyed) {
+          console.log('设置编辑器内容:', initialContent)
+          editor.commands.setContent(initialContent);
+        }
+      });
+    }
+  }, [editor, initialContent]); // 移除 isLocalLoaded 依赖
 
   // 将“光标可见性”逻辑移动到仅在 editor 存在时才渲染的子组件，避免未挂载时报错
   const ToolbarWithCursor = useMemo(() => {
@@ -415,4 +448,3 @@ export function SimpleEditor ({
     </div>
   )
 }
-

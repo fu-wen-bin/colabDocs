@@ -56,7 +56,7 @@ export default function Index () {
           // 设置用户信息到authUtils中
           authUtils.setUser(userData)
           setIsLoggedIn(true)
-          toast.success(`欢迎回来，${userData.name}`)
+          toast.success(`欢迎回来，${userData.name}`,{id:'loginInfo'})
         } else {
           console.warn('后端返回数据异常:', response)
           setIsLoggedIn(false)
@@ -107,7 +107,7 @@ export default function Index () {
     authUtils.clearUser()
     authUtils.clearTokens()
     setIsLoggedIn(false)
-    toast.success(logoutRes.data.message)
+    toast.success(logoutRes.data.message,{id:'loginInfo'})
     // 退出登录后跳转到首页
     navigate('/')
   }

@@ -3,17 +3,10 @@ import {
   SimpleEditor,
 } from './components/tiptap-templates/simple/simple-editor'
 import TableOfContents from './components/TableOfContents'
-import { Editor as TiptapEditor } from '@tiptap/react'
 import { useTipTap, useTocVisible } from '@/stores/editorStore.ts'
 
-interface EditorProps {
-  onEditorReady?: (editor: TiptapEditor) => void; // 将编辑器实例传递给父组件
-  documentId?: string; // 协作文档ID
-}
 
-export default function Editor ({
-                                  documentId = 'example-doc', // 默认文档ID
-                                }: EditorProps) {
+export default function Editor () {
   const editor = useTipTap()
   const isTocVisible = useTocVisible()
 
@@ -42,7 +35,6 @@ export default function Editor ({
         >
           <SimpleEditor
             showToolbar={false} // 禁用编辑器内部的工具栏
-            documentId={documentId} // 新增：传递协作文档ID
           />
         </div>
       </div>
