@@ -9,7 +9,7 @@ import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
 import { useIsMobile } from "@/hooks/use-mobile"
 
 // --- Lib ---
-import { isNodeTypeSelected } from "@/lib/tiptap-utils"
+import { isNodeTypeSelected } from "@/utils/tiptap-utils"
 
 // --- Icons ---
 import { Redo2Icon } from "@/components/tiptap-icons/redo2-icon"

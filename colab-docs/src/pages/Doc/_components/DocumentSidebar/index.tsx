@@ -1,23 +1,16 @@
 'use client'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { cn } from '@/lib/utils.ts'
+import { cn } from '@/utils/utils.ts'
 import { Icon } from '@/components/Icon.tsx'
 import { useNavigate } from 'react-router'
-import FileTree from './folder/components/FileTree'
-import { useFileOperations } from './folder/hooks/useFileOperations'
-import type { FileItem } from './folder/components/FileTree'
+import FileTree from '@/pages/Doc/_components/DocumentSidebar/components/FileTree'
+import { useFileOperations } from '@/pages/Doc/_components/DocumentSidebar/hooks/useFileOperations'
+import type { FileItem } from '@/pages/Doc/_components/DocumentSidebar/components/FileTree'
 import axios from '@/api'
-import { useSidebar } from '@/stores/sidebarStore.ts'
-import FileItemMenu from './folder/FileItemMenu'
-
 interface FileExplorerProps {
   onFileSelect?: (file: FileItem) => void;
 }
 
-interface ContextMenuState {
-  fileId: string | null;
-  position: { x: number; y: number } | null;
-}
 
 function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
   const navigate = useNavigate()
@@ -27,13 +20,6 @@ function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
   const [newItemName, setNewItemName] = useState<string>('')
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null)
   const [isRenaming, setIsRenaming] = useState<string | null>(null)
-  const toggle = useSidebar(state => (state.toggle))
-
-  // 右键菜单状态
-  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
-    fileId: null,
-    position: null,
-  })
 
   // 获取文件列表
   const fetchFiles = useCallback(async () => {
@@ -73,6 +59,7 @@ function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
     fetchFiles()
   }
 
+
   // 文件选择处理
   const handleFileSelect = useCallback(
     (file: FileItem, e: React.MouseEvent) => {
@@ -86,22 +73,6 @@ function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
     },
     [onFileSelect, navigate],
   )
-
-  // 处理右键菜单
-  const handleContextMenu = useCallback((e: React.MouseEvent, fileId: string) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    setContextMenu({
-      fileId,
-      position: { x: e.clientX, y: e.clientY },
-    })
-  }, [])
-
-  // 关闭右键菜单
-  const closeContextMenu = useCallback(() => {
-    setContextMenu({ fileId: null, position: null })
-  }, [])
 
   // 开始创建新文件
   const startCreateNewFile = useCallback(() => {
@@ -170,13 +141,12 @@ function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
   return (
     <div
       ref={sidebarRef}
-      className="rounded-r-2xl flex h-full relative bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-800/90 dark:to-slate-900 shadow-2xl shadow-slate-200/30 dark:shadow-slate-900/50 backdrop-blur-xl z-10"
+      className="transition-all duration-300 rounded-r-2xl flex h-full relative bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-800/90 dark:to-slate-900 shadow-2xl shadow-slate-200/30 dark:shadow-slate-900/50 backdrop-blur-xl z-10"
       style={{ width: '280px' }}
     >
-      {/* 左侧内容区域 */}
       <div
         style={{ width: '280px' }}
-        className="border-r-1 rounded-r-2xl flex-1 h-full overflow-hidden relative bg-gradient-to-br from-white/95 via-slate-50/60 to-white/95 dark:from-slate-800/95 dark:via-slate-800/70 dark:to-slate-800/95 backdrop-blur-lg before:absolute before:left-0 before:top-0 before:bottom-0 before:w-4 before:bg-gradient-to-r before:from-slate-900/5 before:to-transparent dark:before:from-slate-900/20 before:pointer-events-none"
+        className="transition-all duration-300 border-r-1 rounded-r-2xl flex-1 h-full overflow-hidden relative bg-gradient-to-br from-white/95 via-slate-50/60 to-white/95 dark:from-slate-800/95 dark:via-slate-800/70 dark:to-slate-800/95 backdrop-blur-lg before:absolute before:left-0 before:top-0 before:bottom-0 before:w-4 before:bg-gradient-to-r before:from-slate-900/5 before:to-transparent dark:before:from-slate-900/20 before:pointer-events-none"
       >
         {/* 工具栏按钮 */}
         <div
@@ -184,11 +154,11 @@ function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
             'bg-gradient-to-r from-white/90 via-slate-50/70 to-white/90',
             'dark:from-slate-800/90 dark:via-slate-700/70 dark:to-slate-800/90',
             'border-b border-slate-200/60 dark:border-slate-700/60',
-            'backdrop-blur-xl',
+            'backdrop-blur-xl transition-all duration-300',
           )}
         >
-          <div className="flex items-center p-1">
-            <div className="flex w-full justify-evenly">
+          <div className="flex items-center p-1 transition-all duration-300">
+            <div className="flex w-full justify-evenly transition-all duration-300">
               {[
                 {
                   icon: 'LogOut',
@@ -227,7 +197,7 @@ function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
                     className={cn(
                       'p-2 rounded-xl transition-all duration-300 transform hover:scale-110 group/btn',
                       'bg-white/80 dark:bg-slate-700/80 backdrop-blur-md',
-                      item.flip && 'transform scale-x-[-1] hover:scale-x-[-1]', // 应用水平翻转
+                      item.flip && 'transition-all duration-300 transform scale-x-[-1] hover:scale-x-[-1]', // 应用水平翻转
                       'hover:shadow-lg border border-slate-200/50 dark:border-slate-600/50',
                       'cursor-pointer',
                       // 根据颜色设置不同的悬停效果
@@ -267,6 +237,8 @@ function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
                       'transition-all duration-200 pointer-events-none',
                       'whitespace-nowrap z-50',
                       item.flip && 'transform scale-x-[-1]', // 应用水平翻转
+                      // 始终置于最顶层，防止文件选择框遮挡
+                      'z-50',
                     )}
                   >
                     {item.tooltip}
@@ -307,7 +279,6 @@ function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
             newItemName={newItemName}
             showNewItemInput={showNewItemInput}
             onFileSelect={handleFileSelect}
-            onContextMenu={handleContextMenu}
             onFinishRenaming={finishRenaming}
             onFinishCreateNewItem={finishCreateNewItem}
             onCancelCreateNewItem={cancelCreateNewItem}
@@ -318,24 +289,9 @@ function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
             onRename={handleRename}
             onDuplicate={fileOperations.handleDuplicate}
             onDownload={fileOperations.handleDownload}
-            onCloseContextMenu={closeContextMenu} // 传递关闭函数
           />
         </div>
       </div>
-
-      {/* 右键菜单 */}
-      {contextMenu.fileId && contextMenu.position && (
-        <FileItemMenu
-          file={files.find(f => f.id === contextMenu.fileId)!}
-          contextMenuPosition={contextMenu.position}
-          onClose={closeContextMenu}
-          onShare={handleShare}
-          onDelete={fileOperations.handleDelete}
-          onRename={handleRename}
-          onDuplicate={fileOperations.handleDuplicate}
-          onDownload={fileOperations.handleDownload}
-        />
-      )}
     </div>
   )
 }

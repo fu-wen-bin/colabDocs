@@ -64,10 +64,11 @@ app.use(documentsRouter.routes()).use(documentsRouter.allowedMethods())
     const hocuspocus = await createHocuspocusServer()
     // 直接使用端口号，避免传入 { server } 导致 ERR_INVALID_ARG_VALUE
     hocuspocus.listen()
-    logger.success(`Hocuspocus WS 运行在 ws://localhost:${ws_port}`)
+
 
     app.listen(server_port, () => {
       logger.success(`HTTP 服务运行在 http://localhost:${server_port}`)
+      logger.success(`Hocuspocus WS 运行在 ws://localhost:${ws_port}`)
     })
   } catch (err) {
     logger.error('Hocuspocus 初始化失败:', err)

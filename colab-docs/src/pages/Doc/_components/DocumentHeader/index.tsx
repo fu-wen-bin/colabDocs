@@ -1,6 +1,6 @@
 import { Editor } from '@tiptap/react';
 
-import { Icon } from '@/components/ui/Icon';
+import { Icon } from '@/components/Icon';
 
 // 类型定义
 interface CollaborationUser {

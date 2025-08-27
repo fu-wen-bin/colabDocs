@@ -1,7 +1,6 @@
 const Router = require('@koa/router')
 const router = new Router()
 const axios = require('axios')
-const { verify } = require('../utils/jwt')
 // 在应用顶部引入dotenv
 require('dotenv').config()
 
@@ -9,8 +8,7 @@ require('dotenv').config()
 const clientID = process.env.GITHUB_CLIENT_ID || 'Ov23liLWI73TRxSWHiPg'
 const clientSecret = process.env.GITHUB_CLIENT_SECRET ||
                      '4a6368fbc73fe2ae4e260726fc7e64b8904ea8c4'
-const COOKIE_MAX_AGE = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 *
-                       60 * 1000 // 30天
+const COOKIE_MAX_AGE = 400 * 24 * 60 * 60 * 1000 // 400天
 
 // GitHub授权回调处理
 router.get('/oauth/callback', async (ctx) => {
@@ -68,6 +66,7 @@ router.get('/oauth/callback', async (ctx) => {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: COOKIE_MAX_AGE,
+      overwrite: true,
       // path: '/', // 如有需要可明确指定
     })
 

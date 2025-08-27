@@ -15,7 +15,7 @@ import {
   isNodeInSchema,
   isNodeTypeSelected,
   isValidPosition,
-} from "@/lib/tiptap-utils"
+} from "@/utils/tiptap-utils"
 
 // --- Icons ---
 import { HeadingOneIcon } from "@/components/tiptap-icons/heading-one-icon"

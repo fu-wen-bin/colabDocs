@@ -13,7 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import {
   isExtensionAvailable,
   isNodeTypeSelected,
-} from "@/lib/tiptap-utils"
+} from "@/utils/tiptap-utils"
 
 // --- Icons ---
 import { AlignCenterIcon } from "@/components/tiptap-icons/align-center-icon"

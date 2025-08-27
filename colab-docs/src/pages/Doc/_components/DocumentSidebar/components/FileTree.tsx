@@ -1,10 +1,11 @@
 import React, { useRef } from 'react';
 
 // 修复导入路径，指向正确的位置
-import FileItemMenu from '../../folder/FileItemMenu.tsx';
+import FileItemMenu from './FileItemMenu.tsx';
 
-import { Icon } from '@/components/Icon';
-import { cn } from '@/lib/utils';
+import { Icon } from '@/components/Icon.tsx';
+import { cn } from '@/utils/utils.ts';
+import { useEditorStore } from '@/stores/editorStore.ts'
 
 interface FileTreeProps {
   files: FileItem[];
@@ -12,7 +13,6 @@ interface FileTreeProps {
   isRenaming: string | null;
   newItemName: string;
   onFileSelect: (file: FileItem, e: React.MouseEvent) => void;
-  onContextMenu: (e: React.MouseEvent, fileId: string) => void;
   onFinishRenaming: (newName: string) => void;
   onFinishCreateNewItem: () => void;
   onCancelCreateNewItem: () => void;
@@ -24,7 +24,6 @@ interface FileTreeProps {
   onDuplicate: (file: FileItem) => void;
   onDownload: (file: FileItem) => void;
   showNewItemInput: boolean; // 新增：控制是否显示新建文件输入框
-  onCloseContextMenu: () => void; // 新增：关闭右键菜单的回调
 }
 
 // 简化文件类型定义 - 只保留文件类型
@@ -43,7 +42,6 @@ const FileTree: React.FC<FileTreeProps> = ({
   isRenaming,
   newItemName,
   onFileSelect,
-  onContextMenu,
   onFinishRenaming,
   onFinishCreateNewItem,
   onCancelCreateNewItem,
@@ -55,27 +53,32 @@ const FileTree: React.FC<FileTreeProps> = ({
   onDuplicate,
   onDownload,
   showNewItemInput,
-  onCloseContextMenu,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const fileId  = useEditorStore((state) => state.fileId)
+
   // 渲染单个文件
   const renderFile = (file: FileItem): React.ReactNode => {
+
+    if (fileId) selectedFileId = file.id
     const isSelected = selectedFileId === file.id;
     const isItemRenaming = isRenaming === file.id;
+
 
     return (
       <div key={file.id}>
         <div
           className={cn(
             'flex items-center py-2 px-3 text-sm cursor-pointer relative group box-border',
-            'transition-all duration-300 ease-out rounded-lg mx-2 my-0.5',
+            'transition-all duration-300 ease-out rounded-lg mx-2 my-0.5 ',
             // 选中状态样式
             isSelected && [
               'bg-blue-500/10 dark:bg-blue-400/15',
               'text-blue-700 dark:text-blue-300',
               'border-2 border-blue-500 dark:border-blue-400',
               'shadow-sm shadow-blue-500/20',
+              'z-10'
             ],
             // 非选中状态样式
             !isSelected && [
@@ -87,11 +90,9 @@ const FileTree: React.FC<FileTreeProps> = ({
               'border-2 border-transparent',
             ],
           )}
-          onClick={(e) => {
-            onCloseContextMenu(); // 点击文件时关闭右键菜单
+          onClick={(e) => {// 点击文件时关闭右键菜单
             onFileSelect(file, e);
           }}
-          onContextMenu={(e) => onContextMenu(e, file.id)}
         >
           {/* 文件图标 - 精美设计 */}
           <div className="w-6 h-6 mr-3 flex-shrink-0 flex items-center justify-center">
@@ -154,7 +155,6 @@ const FileTree: React.FC<FileTreeProps> = ({
               className={cn('transition-all duration-300 transform hover:scale-110')}
               onClick={(e) => {
                 e.stopPropagation(); // 防止触发文件选择
-                onCloseContextMenu(); // 点击三个点时关闭右键菜单
               }}
             >
               <FileItemMenu
@@ -165,7 +165,7 @@ const FileTree: React.FC<FileTreeProps> = ({
                 onDuplicate={onDuplicate}
                 onDownload={onDownload}
                 className={cn(
-                  'p-1.5 rounded-lg',
+                  'p-1.5 rounded-lg transition-all duration-300',
                   isSelected
                     ? 'hover:bg-blue-100/50 text-blue-600 hover:text-blue-700'
                     : 'hover:bg-blue-100 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400',
@@ -271,7 +271,7 @@ const FileTree: React.FC<FileTreeProps> = ({
   };
 
   return (
-    <div className="py-2 relative"> {/* 添加relative定位 */}
+    <div className="py-2 relative">
       {/* 渲染新建文件输入框（如果显示） */}
       {renderNewFileInput()}
       {/* 渲染文件列表 */}

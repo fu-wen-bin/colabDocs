@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
-import { toast } from 'sonner';
-import axios from '@/api';
+import { useCallback } from 'react'
+import { toast } from 'react-hot-toast'
+import axios from '@/api'
 
-import type { FileItem } from '../components/FileTree'
+import type { FileItem } from '../components/FileTree.tsx'
 
 interface UseFileOperationsReturn {
   handleShare: (file: FileItem) => void;
@@ -17,9 +17,11 @@ export const useFileOperations = (refreshFiles: () => Promise<void>): UseFileOpe
   // 处理文件分享
   const handleShare = useCallback((file: FileItem) => {
     // TODO: 实现分享功能
-    console.log('Share file:', file);
-    toast.info('分享功能开发中...');
-  }, []);
+    console.log('Share file:', file)
+    toast('分享功能开发中...', {
+      icon: '⌛',
+    })
+  }, [])
 
   // 处理文件下载
   const handleDownload = useCallback(async (file: FileItem) => {
@@ -29,27 +31,27 @@ export const useFileOperations = (refreshFiles: () => Promise<void>): UseFileOpe
         fileId: file.id,
       }, {
         responseType: 'blob', // 重要：设置响应类型为 blob
-      });
+      })
 
       if (response.data) {
         // 创建下载链接
-        const blob = new Blob([response.data]);
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = file.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        const blob = new Blob([response.data])
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = file.name
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
 
-        toast.success(`文件 "${file.name}" 下载成功`);
+        toast.success(`文件 "${file.name}" 下载成功`)
       }
     } catch (error) {
-      console.error('下载文件失败:', error);
-      toast.error('下载文件失败，请重试');
+      console.error('下载文件失败:', error)
+      toast.error('下载文件失败，请重试')
     }
-  }, []);
+  }, [])
 
   // 处理文件复制
   const handleDuplicate = useCallback(
@@ -59,22 +61,22 @@ export const useFileOperations = (refreshFiles: () => Promise<void>): UseFileOpe
         const response = await axios.post('/doc/duplicate', {
           fileId: file.id,
           newName: `${file.name} - 副本`,
-        });
+        })
 
         if (response.data?.code === '1') {
           // 刷新文件列表
-          await refreshFiles();
-          toast.success(`文件 "${file.name}" 已复制`);
+          await refreshFiles()
+          toast.success(`文件 "${file.name}" 已复制`)
         } else {
-          throw new Error(response.data?.message || '复制失败');
+          throw new Error(response.data?.message || '复制失败')
         }
       } catch (error: any) {
-        console.error('复制文件失败:', error);
-        toast.error(error.response?.data?.message || '复制文件失败，请重试');
+        console.error('复制文件失败:', error)
+        toast.error(error.response?.data?.message || '复制文件失败，请重试')
       }
     },
     [refreshFiles],
-  );
+  )
 
   // 处理文件删除
   const handleDelete = useCallback(
@@ -84,23 +86,23 @@ export const useFileOperations = (refreshFiles: () => Promise<void>): UseFileOpe
           // 调用后端删除接口
           const response = await axios.post('/doc/delete', {
             fileId: file.id,
-          });
+          })
 
           if (response.data?.code === '1') {
             // 刷新文件列表
-            await refreshFiles();
-            toast.success(`文件 "${file.name}" 已删除`);
+            await refreshFiles()
+            toast.success(`文件 "${file.name}" 已删除`)
           } else {
-            throw new Error(response.data?.message || '删除失败');
+            throw new Error(response.data?.message || '删除失败')
           }
         } catch (error: any) {
-          console.error('删除文件失败:', error);
-          toast.error(error.response?.data?.message || '删除文件失败，请重试');
+          console.error('删除文件失败:', error)
+          toast.error(error.response?.data?.message || '删除文件失败，请重试')
         }
       }
     },
     [refreshFiles],
-  );
+  )
 
   // 处理文件重命名
   const handleRename = useCallback(
@@ -110,22 +112,22 @@ export const useFileOperations = (refreshFiles: () => Promise<void>): UseFileOpe
         const response = await axios.post('/doc/rename', {
           fileId: fileId,
           newName: newName.trim(),
-        });
+        })
 
         if (response.data?.code === '1') {
           // 刷新文件列表
-          await refreshFiles();
-          toast.success(`重命名成功`);
+          await refreshFiles()
+          toast.success(`重命名成功`)
         } else {
-          throw new Error(response.data?.message || '重命名失败');
+          throw new Error(response.data?.message || '重命名失败')
         }
       } catch (error: any) {
-        console.error('重命名失败:', error);
-        toast.error(error.response?.data?.message || '重命名失败，请重试');
+        console.error('重命名失败:', error)
+        toast.error(error.response?.data?.message || '重命名失败，请重试')
       }
     },
     [refreshFiles],
-  );
+  )
 
   // 处理文件创建
   const handleCreate = useCallback(
@@ -134,24 +136,24 @@ export const useFileOperations = (refreshFiles: () => Promise<void>): UseFileOpe
         // 调用后端创建文件接口
         const response = await axios.post('/doc/create', {
           name: name.trim(),
-        });
+        })
 
         if (response.data?.code === '1') {
           // 刷新文件列表
-          await refreshFiles();
-          toast.success(`文件 "${name}" 已创建`);
-          return true;
+          await refreshFiles()
+          toast.success(`文件 "${name}" 已创建`)
+          return true
         } else {
-          throw new Error(response.data?.message || '创建失败');
+          throw new Error(response.data?.message || '创建失败')
         }
       } catch (error: any) {
-        console.error('创建失败:', error);
-        toast.error(error.response?.data?.message || '创建文件失败，请重试');
-        return false;
+        console.error('创建失败:', error)
+        toast.error(error.response?.data?.message || '创建文件失败，请重试')
+        return false
       }
     },
     [refreshFiles],
-  );
+  )
 
   return {
     handleShare,
@@ -160,5 +162,5 @@ export const useFileOperations = (refreshFiles: () => Promise<void>): UseFileOpe
     handleDelete,
     handleRename,
     handleCreate,
-  };
-};
+  }
+}

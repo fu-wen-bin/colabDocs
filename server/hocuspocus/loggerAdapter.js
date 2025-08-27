@@ -1,4 +1,5 @@
-const { logger } = require('../utils/logger.js') // CommonJS 导入
+const { logger } = require('../utils/logger.js')
+const { decode } = require('../utils/jwt') // CommonJS 导入
 
 /**
  * 创建 Hocuspocus 自定义日志扩展
@@ -6,6 +7,7 @@ const { logger } = require('../utils/logger.js') // CommonJS 导入
  */
 function createLoggerExtension () {
   return {
+
     // 当文档被加载时
     onLoadDocument: ({ documentName }) => {
       logger.info(`文档加载: ${documentName}`)
@@ -15,7 +17,7 @@ function createLoggerExtension () {
     onChange: ({ documentName, context, clientsCount }) => {
       const user = context?.user?.name || '未知用户'
       logger.info(
-        `文档变更: ${documentName}, 用户: ${user}, 连接数: ${clientsCount}`)
+        `文档变更: ${documentName}, 用户: ${user}, 连接数: ${clientsCount !== undefined ? clientsCount : '未知'}`)
     },
 
     // 当文档被存储时
@@ -27,9 +29,8 @@ function createLoggerExtension () {
     onDisconnect: ({ documentName, context, socketId, clientsCount }) => {
       const user = context?.user?.name || '未知用户'
       logger.info(
-        `用户断开连接: ${user}, 文档: ${documentName}, 连接ID: ${socketId}, 当前连接数: ${clientsCount}`)
+        `用户断开连接: ${user}, 文档: ${documentName}, 连接ID: ${socketId}, 当前连接数: ${clientsCount !== undefined ? clientsCount : '未知'}`)
     },
-
 
     // 授权事件
     onAuthorize: ({ documentName, context }) => {

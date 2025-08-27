@@ -3,10 +3,10 @@
 import { useState} from 'react';
 import { toast } from 'sonner';
 
-import type { FileItem } from './type'
+import type { FileItem } from './type.ts'
 
-import { Icon } from '@/components/Icon';
-import { cn } from '@/lib/utils';
+import { Icon } from '@/components/Icon.tsx';
+import { cn } from '@/utils/utils.ts';
 import {
   Dialog,
   DialogContent,
@@ -89,15 +89,14 @@ const ShareDialog = ({ file, isOpen, onClose }: ShareDialogProps) => {
           {/* 文件信息 */}
           <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
             <Icon
-              name={file.type === 'folder' ? 'Folder' : 'FileText'}
+              name='FileText'
               className={cn(
-                'h-8 w-8',
-                file.type === 'folder' ? 'text-yellow-500' : 'text-blue-500',
+                'h-8 w-8', 'text-blue-500',
               )}
             />
             <div>
               <p className="font-medium text-gray-900">{file.name}</p>
-              <p className="text-sm text-gray-500">{file.type === 'folder' ? '文件夹' : '文档'}</p>
+              <p className="text-sm text-gray-500">文档</p>
             </div>
           </div>
 

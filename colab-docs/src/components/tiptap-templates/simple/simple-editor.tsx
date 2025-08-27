@@ -31,14 +31,8 @@ import '@/components/tiptap-node/image-node/image-node.scss'
 import '@/components/tiptap-node/heading-node/heading-node.scss'
 import '@/components/tiptap-node/paragraph-node/paragraph-node.scss'
 
-// --- Hooks ---
-import { useIsMobile } from '@/hooks/use-mobile'
-import { useWindowSize } from '@/hooks/use-window-size'
-import { useCursorVisibility } from '@/hooks/use-cursor-visibility'
-
-// --- Components ---
-// --- Lib ---
-import { handleImageUpload, MAX_FILE_SIZE } from '@/lib/tiptap-utils'
+// --- Utils ---
+import { handleImageUpload, MAX_FILE_SIZE } from '@/utils/tiptap-utils'
 
 // --- Styles ---
 import '@/components/tiptap-templates/simple/simple-editor.scss'
@@ -47,19 +41,20 @@ import '@/components/tiptap-templates/simple/simple-editor.scss'
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCaret from '@tiptap/extension-collaboration-caret'
-import { ws_server_url } from '@/lib/defaultConfig.ts'
+import { ws_server_url } from '@/utils/defaultConfig.ts'
 import * as Y from 'yjs'
-import axios,{ authUtils } from '@/api'
-import { getCursorColorByUserId } from '@/lib/cursor_color.ts'
+import axios, { authUtils } from '@/api'
+import { getCursorColorByUserId } from '@/utils/cursor_color.ts'
 import { useEditorStore } from '@/stores/editorStore'
-import { useSearchParams } from 'react-router'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router'
 
 // 定义工具栏是否展示参数
 interface SimpleEditorProps {
   showToolbar?: boolean;
 }
 
+// 协作用户类型
 interface CollaborationUser {
   id: string;
   name: string;
@@ -77,8 +72,6 @@ type ConnectionStatus =
 export function SimpleEditor ({
                                 showToolbar = true,
                               }: SimpleEditorProps) {
-  const isMobile = useIsMobile()
-  const { height } = useWindowSize()
   const toolbarRef = useRef<HTMLDivElement>(null)
   // Hocuspocus Provider
   const [provider, setProvider] = useState<HocuspocusProvider | null>(null)
@@ -100,50 +93,40 @@ export function SimpleEditor ({
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
     'connecting')
   // @ts-ignore
-  const [loading, setLoading] = useState(true);
-  const [searchParams] = useSearchParams()
+  const [loading, setLoading] = useState(true)
   const setEditor = useEditorStore((state) => state.setEditor)
-  const  fileId  = useEditorStore((state) => state.fileId)
-  const  setFileId  = useEditorStore((state) => state.setFileId)
-  const  initialContent  = useEditorStore((state) => state.initialContent)
-  const  setInitialContent  = useEditorStore((state) => state.setInitialContent)
+  const fileId = useEditorStore((state) => state.fileId)
+  const initialContent = useEditorStore((state) => state.initialContent)
+  const setInitialContent = useEditorStore((state) => state.setInitialContent)
+  const navigate = useNavigate()
 
-
-  setFileId(searchParams.get('fileId'))
   console.log('fileId', fileId)
   // 创建Y.Doc
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setDoc(new Y.Doc())
-      setAuthToken(authUtils.getAccessToken() as string)
-      setIsClientReady(true)
-    }
+    setDoc(new Y.Doc())
+    setAuthToken(authUtils.getAccessToken() as string)
+    setIsClientReady(true)
   }, [])
 
   // 获取对应id文件的内容
   const getDocumentContent = async () => {
     try {
-      setLoading(true);
-      const result = await axios.post('/doc/getContent', {fileId})
-      console.log('获取到的文档内容:', result.data) // 调试日志
-      if(result.data.code === '1' && result.data.content){  // 修改：检查 code 而不是 success
-        // 将字符串内容解析为 JSON
+      setLoading(true)
+      const result = await axios.post('/doc/getContent', { fileId })
+      console.log('获取到的文档内容:', result.data)
+      if (result.data.code === '1' && result.data.content) {
+        // 解析字符串
         const content = typeof result.data.content === 'string'
           ? JSON.parse(result.data.content)
-          : result.data.content;
-        console.log('解析后的内容:', content) // 调试日志
-        setInitialContent(content);
-
-        // 如果编辑器已经准备好，立即设置内容
-        if (editor && !editor.isDestroyed) {
-          editor.commands.setContent(content);
-        }
+          : result.data.content
+        console.log('解析后的内容:', content)
+        setInitialContent(content)
+        setLoading(false)
       }
-      setLoading(false);
     } catch (error) {
       console.error('获取文档内容失败:', error)
       toast.error('获取文档内容失败')
-      setLoading(false);
+      setLoading(false)
     }
   }
 
@@ -160,12 +143,15 @@ export function SimpleEditor ({
           color: getCursorColorByUserId(userProfileStr.id.toString()),
           avatar: userProfileStr.avatar_url,
         })
+        console.log('获取用户数据')
       }
 
     } catch (error) {
       console.error('解析用户信息失败:', error)
     }
   }, [authToken, fileId])
+
+
 
   // 本地持久化 - IndexedDB 只在浏览器中可用
   useEffect(() => {
@@ -198,13 +184,6 @@ export function SimpleEditor ({
     }
   }, [fileId, doc])
 
-  // 修改：当 fileId 变化时立即获取内容
-  useEffect(() => {
-    if (fileId && authToken) {
-      getDocumentContent();
-    }
-  }, [fileId, authToken]);
-
   // 确保编辑器和服务器准备就绪
   useEffect(() => {
     if (!authToken || !fileId || !doc || !isEditorReady) return
@@ -231,28 +210,36 @@ export function SimpleEditor ({
         name: fileId,
         document: doc,
         token: authToken,
-
+        onOpen() {
+          console.log('服务器开启连接')
+        },
         onConnect: () => {
-          console.log('[Hocuspocus] connected')
-          setConnectionStatus('syncing')
-          // 移除这里的 getDocumentContent() 调用，避免重复获取
+          console.log('初步连接成功，准备身份验证')
+          setConnectionStatus('connecting')
+        },
+        onAuthenticationFailed: () => {
+          toast.error('身份验证失败，请重新登录')
+          navigate('/')
+          setConnectionStatus('error')
+        },
+        onAuthenticated() {
+          console.log('身份验证成功,已连接至服务器')
         },
         onDisconnect: () => {
-          console.log('[Hocuspocus] disconnected')
+          toast('与服务器断开连接',{icon: '⚠️'})
           setConnectionStatus('disconnected')
           setIsServerSynced(false)
         },
         onDestroy: () => {
+          console.log('服务器销毁')
           setConnectionStatus('disconnected')
           setIsServerSynced(false)
         },
-        onAuthenticationFailed: (data) => {
-          console.error('协作服务器认证失败:', data)
-          setConnectionStatus('error')
-        },
         onSynced: () => {
+          console.log('与服务器同步完成')
           setConnectionStatus('connected')
           setIsServerSynced(true)
+          setLoading(false)
           clearOfflineEdits()
         },
       })
@@ -272,9 +259,9 @@ export function SimpleEditor ({
         providerRef.current = null
       }
     }
-  }, [fileId, isEditorReady, authToken, doc]) // 添加必要的依赖
+  }, [fileId, isEditorReady]) // 在roomId变化或编辑器就绪时创建连接
 
-  // 设置用户awareness信息
+  // 用户感知信息
   useEffect(() => {
     if (provider?.awareness && currentUser) {
       provider.awareness.setLocalStateField('user', currentUser)
@@ -313,12 +300,8 @@ export function SimpleEditor ({
     return () => provider.awareness?.off('update', handleAwarenessUpdate)
   }, [provider, currentUser])
 
-  console.log(initialContent, 'initialContent')
   // 设置编辑器准备就绪状态
   const editor = useEditor({
-    autofocus: true,
-    immediatelyRender: false,
-    shouldRerenderOnTransaction: false,
     editorProps: {
       attributes: {
         autocomplete: 'on',
@@ -328,6 +311,9 @@ export function SimpleEditor ({
         class: 'simple-editor',
       },
     },
+    autofocus: true,
+    immediatelyRender: false,
+    shouldRerenderOnTransaction: false,
     extensions: [
       StarterKit.configure({
         horizontalRule: false,
@@ -352,7 +338,7 @@ export function SimpleEditor ({
         upload: handleImageUpload,
         onError: (error) => console.error('上传出错：', error),
       }),
-      // 新增：协同编辑扩展（在 provider 就绪时启用）
+      // 协同编辑扩展（在 provider 就绪时启用）
       ...(doc
         ? [Collaboration.configure({ document: doc, field: 'content' })]
         : []),
@@ -382,7 +368,22 @@ export function SimpleEditor ({
     onUpdate: () => {
       // 防止在更新期间的意外状态变更
     },
+
   }, [provider, doc, currentUser]) //
+
+// 设置初始内容
+  useEffect(() => {
+    if (!editor || !initialContent) return
+
+    if (editor && !editor.isDestroyed) {
+      // 使用 setTimeout 避免在渲染期间同步设置内容
+      setTimeout(() => {
+        if (editor && !editor.isDestroyed) {
+          editor.commands.setContent(initialContent)
+        }
+      }, 0)
+    }
+  }, [editor, initialContent])
 
   // 将 editor 实例存入全局状态
   useEffect(() => {
@@ -391,20 +392,14 @@ export function SimpleEditor ({
     }
   }, [editor])
 
-  // 修改内容设置逻辑
   useEffect(() => {
-    if (editor && !editor.isDestroyed && initialContent && initialContent.content) {
-      // 使用 requestAnimationFrame 确保在下一帧设置内容
-      requestAnimationFrame(() => {
-        if (editor && !editor.isDestroyed) {
-          console.log('设置编辑器内容:', initialContent)
-          editor.commands.setContent(initialContent);
-        }
-      });
-    }
-  }, [editor, initialContent]); // 移除 isLocalLoaded 依赖
+    if (editor && !loading && !editor.isDestroyed) {
 
-  // 将“光标可见性”逻辑移动到仅在 editor 存在时才渲染的子组件，避免未挂载时报错
+      setTimeout(() => editor.commands.focus(), 100)
+    }
+  }, [editor, loading])
+
+  // 将"光标可见性"逻辑移动到仅在 editor 存在时才渲染的子组件，避免未挂载时报错
   const ToolbarWithCursor = useMemo(() => {
       if (!showToolbar) return null
       if (!editor) return null
@@ -413,38 +408,47 @@ export function SimpleEditor ({
           ref={toolbarRef}
           className="tiptap-toolbar"
           style={{
-            ...(isMobile
-              ? {
-                bottom: `calc(100% - ${
-                  height - (useCursorVisibility(
-                    {
-                      editor,
-                      overlayHeight: toolbarRef.current?.getBoundingClientRect().height ??
-                                     0,
-                    }).y)
-                }px)`,
-              }
-              : {}),
             width: '100%',
             overflowX: 'auto',
           }}
         >
         </Toolbar>
       )
-    }, [showToolbar, editor, isMobile, height, toolbarRef],
+    }, [showToolbar, editor, toolbarRef],
   )
-  console.log(provider, 'provider')
-  return (
-    <div className="simple-editor-wrapper">
-      <EditorContext.Provider value={{ editor }}>
-        {ToolbarWithCursor /* 仅在 editor 存在时渲染，内部才调用 useCursorVisibility */}
 
-        <EditorContent
-          editor={editor}
-          role="presentation"
-          className="simple-editor-content"
-        />
-      </EditorContext.Provider>
-    </div>
+  useEffect(() => {
+    console.log('Provider updated:', provider)
+  }, [provider])
+
+  return (
+
+    (!isClientReady || loading || !doc) ?
+      (
+        <div
+          className="h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+          <div className="text-center">
+            <div
+              className="inline-block animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full mb-4"></div>
+            <p>{+!isClientReady} || {+loading} || {+!doc} || {+!isClientReady}</p>
+            <p className="text-lg text-gray-600 dark:text-gray-400">
+              {!isClientReady ? '正在初始化...' : '正在加载文档编辑器...'}
+            </p>
+          </div>
+        </div>
+      ) :
+      (
+        <div className="simple-editor-wrapper">
+          <EditorContext.Provider value={{ editor }}>
+            {ToolbarWithCursor}
+
+            <EditorContent
+              editor={editor}
+              role="presentation"
+              className="simple-editor-content"
+            />
+          </EditorContext.Provider>
+        </div>
+      )
   )
 }

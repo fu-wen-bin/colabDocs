@@ -10,6 +10,7 @@ const {
 } = require('../controllers/Account')
 const axios = require('axios')
 const jwt = require('jsonwebtoken')
+const COOKIE_MAX_AGE = 400 * 24 * 60 * 60 * 1000 // 400天
 
 router.prefix('/user') // 路由前缀，所有路由都以 /user 开头
 
@@ -200,6 +201,14 @@ router.get('/getInfo', verify(), async (ctx) => {
   }
 
   try {
+    ctx.cookies.set('github_token', gitToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: COOKIE_MAX_AGE,
+      overwrite: true,
+    })
+
     console.log('准备请求GitHub API...')
     const result = await axios({
       method: 'get',

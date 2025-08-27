@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import type { FileItem } from './components/FileTree'
-import { Icon } from '@/components/Icon'
-import { cn } from '@/lib/utils'
+import type { FileItem } from './FileTree.tsx'
+import { Icon } from '@/components/Icon.tsx'
+import { cn } from '@/utils/utils.ts'
 
 interface FileItemMenuProps {
   file: FileItem;
@@ -15,6 +15,7 @@ interface FileItemMenuProps {
   className?: string;
   contextMenuPosition?: { x: number; y: number } | null; // 右键菜单位置
   onClose?: () => void; // 关闭菜单的回调
+  onCloseContextMenu?: () => void; // 关闭右键菜单的回调
 }
 
 const FileItemMenu = ({
@@ -67,7 +68,11 @@ const FileItemMenu = ({
   const handleMenuClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsOpen(!isOpen)
+    setIsOpen(!isOpen) // 防止触发文件选择
+    if (!isContextMenu) {
+      onClose?.()
+    }
+
   }
 
   const handleMenuItemClick = (action: () => void) => (e: React.MouseEvent) => {
@@ -172,11 +177,11 @@ const FileItemMenu = ({
     <div className={cn('relative', className)}>
       <button
         ref={buttonRef}
-        className="p-1 cursor-pointer bg-none rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"
+        className="p-1 cursor-pointer bg-none rounded-full dark:hover:bg-slate-700 text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"
         onClick={handleMenuClick}
         title="更多操作"
       >
-        <Icon name="MoreVertical" className="h-4 w-4" />
+        <Icon name="EllipsisVertical" className="h-4 w-4" />
       </button>
 
       {isOpen && renderMenu()}
