@@ -7,18 +7,15 @@ import FileTree from '@/pages/Doc/_components/DocumentSidebar/components/FileTre
 import { useFileOperations } from '@/pages/Doc/_components/DocumentSidebar/hooks/useFileOperations'
 import type { FileItem } from '@/pages/Doc/_components/DocumentSidebar/components/FileTree'
 import axios from '@/api'
-interface FileExplorerProps {
-  onFileSelect?: (file: FileItem) => void;
-}
 
 
-function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
+
+function DocumentSidebar() {
   const navigate = useNavigate()
   const [files, setFiles] = useState<FileItem[]>([])
   const sidebarRef = useRef<HTMLDivElement>(null)
   const [showNewItemInput, setShowNewItemInput] = useState(false) // 是否显示新建文件输入框
   const [newItemName, setNewItemName] = useState<string>('')
-  const [selectedFileId, setSelectedFileId] = useState<string | null>(null)
   const [isRenaming, setIsRenaming] = useState<string | null>(null)
 
   // 获取文件列表
@@ -58,21 +55,6 @@ function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
   const refreshFiles = () => {
     fetchFiles()
   }
-
-
-  // 文件选择处理
-  const handleFileSelect = useCallback(
-    (file: FileItem, e: React.MouseEvent) => {
-      e.stopPropagation()
-      setSelectedFileId(file.id)
-
-      // 导航到文档编辑页面
-      navigate(`/doc?fileId=${file.id}`)
-
-      if (onFileSelect) onFileSelect(file)
-    },
-    [onFileSelect, navigate],
-  )
 
   // 开始创建新文件
   const startCreateNewFile = useCallback(() => {
@@ -274,11 +256,9 @@ function DocumentSidebar({ onFileSelect }: FileExplorerProps) {
         >
           <FileTree
             files={files}
-            selectedFileId={selectedFileId}
             isRenaming={isRenaming}
             newItemName={newItemName}
             showNewItemInput={showNewItemInput}
-            onFileSelect={handleFileSelect}
             onFinishRenaming={finishRenaming}
             onFinishCreateNewItem={finishCreateNewItem}
             onCancelCreateNewItem={cancelCreateNewItem}

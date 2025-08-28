@@ -5,14 +5,13 @@ import FileItemMenu from './FileItemMenu.tsx';
 
 import { Icon } from '@/components/Icon.tsx';
 import { cn } from '@/utils/utils.ts';
-import { useEditorStore } from '@/stores/editorStore.ts'
+import { useNavigate } from 'react-router'
+import { useEditorStore } from '@/stores/editorStore.ts';
 
 interface FileTreeProps {
   files: FileItem[];
-  selectedFileId: string | null;
   isRenaming: string | null;
   newItemName: string;
-  onFileSelect: (file: FileItem, e: React.MouseEvent) => void;
   onFinishRenaming: (newName: string) => void;
   onFinishCreateNewItem: () => void;
   onCancelCreateNewItem: () => void;
@@ -23,7 +22,7 @@ interface FileTreeProps {
   onRename: (file: FileItem) => void;
   onDuplicate: (file: FileItem) => void;
   onDownload: (file: FileItem) => void;
-  showNewItemInput: boolean; // 新增：控制是否显示新建文件输入框
+  showNewItemInput: boolean; // 控制是否显示新建文件输入框
 }
 
 // 简化文件类型定义 - 只保留文件类型
@@ -38,10 +37,8 @@ export type FileItem = {
 
 const FileTree: React.FC<FileTreeProps> = ({
   files,
-  selectedFileId,
   isRenaming,
   newItemName,
-  onFileSelect,
   onFinishRenaming,
   onFinishCreateNewItem,
   onCancelCreateNewItem,
@@ -56,15 +53,19 @@ const FileTree: React.FC<FileTreeProps> = ({
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const fileId  = useEditorStore((state) => state.fileId)
+  // 使用统一的状态管理
+  const fileId = useEditorStore((state) => state.fileId)
+  const setFileId = useEditorStore((state) => state.setFileId)
+  const navigate = useNavigate()
 
   // 渲染单个文件
   const renderFile = (file: FileItem): React.ReactNode => {
-
-    if (fileId) selectedFileId = file.id
-    const isSelected = selectedFileId === file.id;
+    // 修正：使用正确地选中状态判断
+    const isSelected = fileId === file.id;
     const isItemRenaming = isRenaming === file.id;
 
+
+    console.log(fileId);
 
     return (
       <div key={file.id}>
@@ -90,8 +91,11 @@ const FileTree: React.FC<FileTreeProps> = ({
               'border-2 border-transparent',
             ],
           )}
-          onClick={(e) => {// 点击文件时关闭右键菜单
-            onFileSelect(file, e);
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation()
+            setFileId(file.id)
+            // 导航到文档编辑页面
+            navigate(`/doc?fileId=${file.id}`)
           }}
         >
           {/* 文件图标 - 精美设计 */}

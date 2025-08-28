@@ -18,6 +18,7 @@
     "@koa/router": "^14.0.0",
     "axios": "^1.11.0",
     "dayjs": "^1.11.13",
+    "debounce": "^2.2.0",
     "dotenv": "^16.3.1",
     "jsonwebtoken": "^9.0.2",
     "koa": "^3.0.1",

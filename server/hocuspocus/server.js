@@ -3,35 +3,134 @@ const { ws_port } = require('../base.config.js')
 const jwt = require('jsonwebtoken')
 const { decode } = require('../utils/jwt')
 const { findContent } = require('../controllers/Documents')
+const { sql_config } = require('../base.config')
+const Y = require('yjs')
+const  debounce  = require('debounce')
 
 // 使用动态 import 以在 CommonJS 中加载可能为 ESM-only 的依赖
 async function createHocuspocusServer () {
   const { Server } = await import('@hocuspocus/server')
   const { Database } = await import('@hocuspocus/extension-database')
-  // 兼容 CJS（default）与 ESM 两种导出
-  const loggerAdapterModule = await import('./loggerAdapter.js')
-  const { createLoggerExtension } = loggerAdapterModule.default || loggerAdapterModule
+  const { TiptapTransformer } = await import('@hocuspocus/transformer')
 
+  let debounced
   return new Server({
     port: ws_port, // 使用配置端口，避免与前端不一致
     // 设置服务器级别的防抖
     debounce: 3000, // Hocuspocus 内置防抖，3秒内的多次更新会合并
     extensions: [
-      // 使用自定义日志扩展代替官方 Logger
-      // createLoggerExtension(),
 
       // 数据库扩展
-      new Database({
-        type: 'memory',
-        // 其他数据库配置
-      }),
+      /*new Database({
+        // 基本 MySQL 连接配置
+        type: 'mysql',
+        host: sql_config.host,
+        port: parseInt(process.env.DB_PORT || '3306'),
+        database: process.env.DB_NAME || 'collaboration_db',
+        user: process.env.DB_USER || 'db_user',
+        password: process.env.DB_PASSWORD || 'password',
+
+        // 自定义表名和字段
+        tableName: 'document_contents', // 您的表名
+
+        // 自定义查询 - 适应您的表结构
+        async fetch(documentName) {
+          logger.info(`[2025-08-27 14:01:43] 正在加载文档 ${documentName} (用户: fu-wen-bin)`)
+
+          try {
+            // 获取连接
+            const connection = await this.pool.getConnection()
+
+            try {
+              // 自定义查询 - 根据您的表结构调整
+              const [rows] = await findContent()
+
+              if (rows.length === 0) {
+                logger.info(`文档 ${documentName} 不存在，将创建新文档`)
+                return null
+              }
+
+              // 记录文档加载
+              logger.info(`文档 ${documentName} 已加载，标题: ${rows[0].title}`)
+
+              // 返回文档内容（YDOC二进制数据）
+              return rows[0].doc_content
+            } finally {
+              // 释放连接
+              connection.release()
+            }
+          } catch (error) {
+            logger.error(`加载文档失败: ${error.message}`)
+            return null
+          }
+        },
+
+        async store(documentName, state) {
+          logger.info(`[2025-08-27 14:01:43] 正在保存文档 ${documentName} (用户: fu-wen-bin)`)
+
+          try {
+            const connection = await this.pool.getConnection()
+
+            try {
+              // 检查文档是否存在
+              const [existingDoc] = await connection.execute(
+                'SELECT doc_id FROM document_contents WHERE doc_id = ?',
+                [documentName]
+              )
+
+              const currentTime = new Date().toISOString().slice(0, 19).replace('T', ' ')
+
+              if (existingDoc.length === 0) {
+                // 插入新文档
+                await connection.execute(
+                  `INSERT INTO document_contents (
+                  doc_id, doc_content, created_at, updated_at
+                ) VALUES (?, ?, ?, ?)`,
+                  [documentName, state, currentTime, currentTime]
+                )
+
+                // 可能需要在metadata表中也创建记录
+                logger.info(`创建了新文档: ${documentName}`)
+                  `INSERT INTO document_metadata (
+                  doc_id, title, owner_id, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?)`,
+                  [documentName, '未命名文档', 'system', currentTime, currentTime]
+                )
+
+                logger.info(`创建了新文档: ${documentName}`)
+              } else {
+                // 更新现有文档
+                await connection.execute(
+                  'UPDATE document_contents SET doc_content = ?, updated_at = ? WHERE doc_id = ?',
+                  [state, currentTime, documentName]
+                )
+
+                // 更新元数据中的最后修改时间
+                await connection.execute(
+                  'UPDATE document_metadata SET updated_at = ? WHERE doc_id = ?',
+                  [currentTime, documentName]
+                )
+
+                logger.info(`更新了文档: ${documentName}`)
+              }
+
+              return true
+            } finally {
+              connection.release()
+            }
+          } catch (error) {
+            logger.error(`保存文档失败: ${error.message}`)
+            return false
+          }
+        }
+      })*/
     ],
 
     // 验证用户身份
     async onAuthenticate ({ token }) {
       if (!token) {
         logger.error('身份验证失败: 无 token')
-        throw new Error("身份验证失败: 无 token");
+        throw new Error('身份验证失败: 无 token')
       }
 
       try {
@@ -51,12 +150,12 @@ async function createHocuspocusServer () {
         return { user }
       } catch (error) {
         logger.error('身份验证错误', error)
-        throw new Error("身份验证错误！");
+        throw new Error('身份验证错误！')
       }
     },
 
     // 连接时
-    async onConnect ({ documentName }){
+    async onConnect ({ documentName }) {
       logger.debug(`正在连接到文档 ${documentName}`)
     },
 
@@ -82,6 +181,88 @@ async function createHocuspocusServer () {
       return true // 允许连接
     },
 
+    // 初始化加载文档
+    async onLoadDocument ({ documentName, document }) {
+      logger.info(`开始加载文档: ${documentName}`)
+
+      try {
+        // 从数据库获取文档内容
+        const result = await findContent({ fileId: documentName })
+        console.log(result)
+
+        if (result && result[0] && result[0].content) {
+          logger.info(`从数据库加载文档: ${documentName}`)
+
+          // 解析 JSON 内容
+          const jsonContent = typeof result[0].content === 'string'
+                              ? JSON.parse(result[0].content) : result[0].content
+
+          // 使用 TiptapTransformer 将 JSON 转换为 Y.Doc
+          const ydoc = TiptapTransformer.toYdoc(
+            jsonContent,
+            'content', // 字段名必须与前端 Collaboration 扩展配置一致
+          )
+
+          // 应用更新到文档
+          const update = Y.encodeStateAsUpdate(ydoc)
+          Y.applyUpdate(document, update)
+
+          logger.info(`文档 ${documentName} 加载完成`)
+          return document
+        } else {
+          logger.info(`文档 ${documentName} 不存在`)
+          // 返回空文档，让客户端创建新内容
+          return document
+        }
+      } catch (error) {
+        logger.error(`加载文档失败: ${error.message}`)
+        // 返回空文档
+        return document
+      }
+    },
+
+    // 文档变更时保存
+    async onChange ({ documentName, document, context }) {
+      const save = () => {
+        logger.debug(`文档 ${documentName} 发生变更`)
+
+        try {
+          // 获取用户信息
+          const user = context?.user
+          if (!user) {
+            logger.warn('无用户信息，跳过保存')
+            return
+          }
+
+          // 将 Y.Doc 转换为 JSON
+          const jsonContent = TiptapTransformer.fromYdoc(
+            document,
+            'content',
+          )
+
+          // 保存到数据库（这里需要您实现具体的保存逻辑）
+          // await saveContent({
+          //   fileId: documentName,
+          //   content: JSON.stringify(jsonContent),
+          //   userId: user.id
+          // })
+
+          logger.info(`文档 ${documentName} 已保存`)
+        } catch (error) {
+          logger.error(`保存文档失败: ${error.message}`)
+        }
+      }
+      debounced?.clear()
+      debounced = debounce(save, 5000)
+      debounced()
+    },
+
+    // 断开连接时
+    async onDisconnect ({ documentName, context }) {
+      const user = context?.user
+      logger.info(
+        `用户 ${user?.name || '未知'} 断开文档 ${documentName} 的连接`)
+    },
   })
 }
 
