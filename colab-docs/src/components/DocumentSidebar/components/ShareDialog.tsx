@@ -3,7 +3,7 @@
 import { useState} from 'react';
 import { toast } from 'sonner';
 
-import type { FileItem } from './type.ts'
+import type { FileItem } from '@/pages/Doc/type.ts';
 
 import { Icon } from '@/components/Icon.tsx';
 import { cn } from '@/utils/utils.ts';

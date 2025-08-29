@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import type { FileItem } from './FileTree.tsx'
+import type { FileItem } from '@/pages/Doc/type.ts'
 import { Icon } from '@/components/Icon.tsx'
 import { cn } from '@/utils/utils.ts'
 
@@ -102,17 +102,17 @@ const FileItemMenu = ({
       className: 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20',
     },
     {
-      icon: 'Copy',
-      label: '复制',
-      action: () => onDuplicate?.(file),
-      show: !!onDuplicate,
-      className: 'text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800',
-    },
-    {
       icon: 'Pencil',
       label: '重命名',
       action: () => onRename?.(file),
       show: !!onRename,
+      className: 'text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-800',
+    },
+    {
+      icon: 'Copy',
+      label: '复制为副本',
+      action: () => onDuplicate?.(file),
+      show: !!onDuplicate,
       className: 'text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800',
     },
     {

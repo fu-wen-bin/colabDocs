@@ -3,7 +3,8 @@ const router = new Router()
 const { verify } = require('../utils/jwt.js')
 const {
   findContent,
-  getDocumentList,
+  getOwnedDocumentList,
+  getCollaboratedDocumentList,
   createDocument,
   deleteDocument,
   renameDocument,
@@ -38,6 +39,7 @@ router.post('/getContent', verify(), async (ctx) => {
         code: '1', // 成功状态码
         message: '内容查询成功',
         content: res[0].content, // 返回字符串格式的文档内容（JSON字符串）
+        y_state: res[0].y_state, // 返回Yjs状态
         success: true, // 添加 success 字段
       }
     } else {
@@ -70,13 +72,15 @@ router.post('/getList', verify(), async (ctx) => {
 
     console.log('获取文档列表 - 用户ID:', userId)
 
-    // 查询用户的文档列表
-    const documentList = await getDocumentList(userId)
+    // 查询用户的文档列表 - 分别获取拥有的和协作的文档
+    const ownedDocs = await getOwnedDocumentList(userId)
+    const collaboratedDocs = await getCollaboratedDocumentList(userId)
 
     ctx.body = {
       code: '1',
       message: '获取文档列表成功',
-      data: documentList,
+      data: ownedDocs,        // 用户拥有的文档
+      dataS: collaboratedDocs // 用户作为协作者的文档
     }
   } catch (error) {
     console.error('获取文档列表失败:', error)

@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import axios from '@/api'
 
-import type { FileItem } from '../components/FileTree.tsx'
+import type { FileItem } from '@/pages/Doc/type.ts'
 
 interface UseFileOperationsReturn {
   handleShare: (file: FileItem) => void;
@@ -21,6 +21,8 @@ export const useFileOperations = (refreshFiles: () => Promise<void>): UseFileOpe
     toast('分享功能开发中...', {
       icon: '⌛',
     })
+
+
   }, [])
 
   // 处理文件下载

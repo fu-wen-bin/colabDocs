@@ -1,6 +1,6 @@
 import { icons } from 'lucide-react';
 
-import { cn } from '@/utils/utils';
+import { cn } from '@/utils/utils.ts';
 
 export type IconProps = {
   name: keyof typeof icons;

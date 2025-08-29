@@ -1,17 +1,51 @@
 const { allServices } = require('../../config')
 const { nanoid } = require('nanoid')
 
-// 根据文件Id查找文件内容
+// 根据文件Id查找文件内容（返回 y_state 和 content）
 const findContent = (data) => {
   // 1. 构建查询语句
-  const sql = 'SELECT content FROM documents_content WHERE document_id = ?'
+  const sql = 'SELECT content, y_state FROM documents_content WHERE document_id = ?'
   // 2. 执行查询
   return allServices.query(sql,[data.fileId])
 }
 
-// 获取用户的文档列表
-const getDocumentList = (userId) => {
-  // 查询用户创建的文档和作为协作者的文档
+// upsert 保存（y_state 为权威，同时保存 JSON 方便检索/导出）
+const upsertDocumentContent = async ({ fileId, yState, content }) => {
+  const sql = `
+    INSERT INTO documents_content (document_id, content, y_state)
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      content = VALUES(content),
+      y_state = VALUES(y_state),
+      updated_at = CURRENT_TIMESTAMP
+  `
+  await allServices.query(sql, [fileId, content ?? null, yState ?? null])
+
+  // 维护 documents.updated_at，便于列表按最近编辑排序
+  await allServices.query('UPDATE documents SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [fileId])
+
+  return { success: true }
+}
+
+// 获取用户作为拥有者的文档列表
+const getOwnedDocumentList = (userId) => {
+  const sql = `
+    SELECT 
+      d.id,
+      d.doc_name,
+      d.owner_id,
+      d.created_at,
+      d.updated_at,
+      'owner' as role
+    FROM documents d
+    WHERE d.status = 'active' AND d.owner_id = ?
+    ORDER BY d.updated_at DESC
+  `
+  return allServices.query(sql, [userId])
+}
+
+// 获取用户作为协作者的文档列表
+const getCollaboratedDocumentList = (userId) => {
   const sql = `
     SELECT DISTINCT
       d.id,
@@ -19,18 +53,22 @@ const getDocumentList = (userId) => {
       d.owner_id,
       d.created_at,
       d.updated_at,
-      CASE 
-        WHEN d.owner_id = ? THEN 'owner'
-        ELSE 'editor'
-      END as role
+      'editor' as role
     FROM documents d
-    LEFT JOIN document_collaborators dc ON d.id = dc.document_id
+    JOIN document_collaborators dc ON d.id = dc.document_id
     WHERE d.status = 'active' 
-      AND (d.owner_id = ? OR dc.user_id = ?)
+      AND dc.user_id = ?
+      AND d.owner_id != ?  /* 确保不包含用户自己拥有的文档 */
     ORDER BY d.updated_at DESC
   `
-  // 执行查询，传入三个相同的userId参数
-  return allServices.query(sql, [userId, userId, userId])
+  return allServices.query(sql, [userId, userId])
+}
+
+// 保留原有函数以保持向后兼容性
+const getDocumentList = async (userId) => {
+  const ownedDocs = await getOwnedDocumentList(userId)
+  const collaboratedDocs = await getCollaboratedDocumentList(userId)
+  return [...ownedDocs, ...collaboratedDocs]
 }
 
 // 创建新文档
@@ -221,7 +259,10 @@ const getDocumentForDownload = async (data) => {
 
 module.exports = {
   findContent,
+  upsertDocumentContent,
   getDocumentList,
+  getOwnedDocumentList,
+  getCollaboratedDocumentList,
   createDocument,
   deleteDocument,
   renameDocument,

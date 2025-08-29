@@ -3,35 +3,46 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/utils/utils.ts'
 import { Icon } from '@/components/Icon.tsx'
 import { useNavigate } from 'react-router'
-import FileTree from '@/pages/Doc/_components/DocumentSidebar/components/FileTree'
-import { useFileOperations } from '@/pages/Doc/_components/DocumentSidebar/hooks/useFileOperations'
-import type { FileItem } from '@/pages/Doc/_components/DocumentSidebar/components/FileTree'
+import FileTree from '@/components/DocumentSidebar/components/FileTree.tsx'
+import { useFileOperations } from '@/components/DocumentSidebar/hooks/useFileOperations.ts'
+import type { FileItem } from '@/pages/Doc/type.ts'
 import axios from '@/api'
+import SharedDocuments from './components/SharedDocuments'
+//import SharedDocuments from '@/components/DocumentSidebar/components/SharedDocuments.tsx'
 
 
 
 function DocumentSidebar() {
   const navigate = useNavigate()
   const [files, setFiles] = useState<FileItem[]>([])
+  const [sharedFiles, setSharedFiles] = useState<FileItem[]>([])
   const sidebarRef = useRef<HTMLDivElement>(null)
   const [showNewItemInput, setShowNewItemInput] = useState(false) // 是否显示新建文件输入框
   const [newItemName, setNewItemName] = useState<string>('')
   const [isRenaming, setIsRenaming] = useState<string | null>(null)
 
   // 获取文件列表
-  const fetchFiles = useCallback(async () => {
+  const fetchOwnFiles = useCallback(async () => {
     try {
       const response = await axios.post('/doc/getList')
       if (response.data?.code === '1') {
         // 将后端返回的数据转换为前端需要的格式
-        const fileList = response.data.data.map((doc: any) => ({
+        const ownFileList = response.data.data.map((doc: any) => ({
           id: doc.id,
           name: doc.doc_name,
           type: 'file' as const,
           created_at: doc.created_at,
           updated_at: doc.updated_at,
         }))
-        setFiles(fileList)
+        setFiles(ownFileList)
+        const sharedFileList = response.data.dataS.map((doc: any) => ({
+          id: doc.id,
+          name: doc.doc_name,
+          type: 'file' as const,
+          created_at: doc.created_at,
+          updated_at: doc.updated_at,
+        }))
+        setSharedFiles(sharedFileList)
       }
     } catch (error) {
       console.error('获取文件列表失败:', error)
@@ -40,11 +51,11 @@ function DocumentSidebar() {
 
   // 初始化时加载文件列表
   useEffect(() => {
-    fetchFiles()
-  }, [fetchFiles])
+    fetchOwnFiles()
+  }, [fetchOwnFiles])
 
   // 文件操作钩子
-  const fileOperations = useFileOperations(fetchFiles)
+  const fileOperations = useFileOperations(fetchOwnFiles)
 
   // 返回首页
   const backHome = () => {
@@ -53,7 +64,7 @@ function DocumentSidebar() {
 
   // 刷新文件列表
   const refreshFiles = () => {
-    fetchFiles()
+    fetchOwnFiles()
   }
 
   // 开始创建新文件
@@ -271,6 +282,9 @@ function DocumentSidebar() {
             onDownload={fileOperations.handleDownload}
           />
         </div>
+        {/* 分享文档栏目 */}
+        <SharedDocuments sharedFiles={sharedFiles}/>
+
       </div>
     </div>
   )

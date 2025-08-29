@@ -7,33 +7,8 @@ import { Icon } from '@/components/Icon.tsx';
 import { cn } from '@/utils/utils.ts';
 import { useNavigate } from 'react-router'
 import { useEditorStore } from '@/stores/editorStore.ts';
+import type { FileItem, FileTreeProps } from '@/pages/Doc/type.ts'
 
-interface FileTreeProps {
-  files: FileItem[];
-  isRenaming: string | null;
-  newItemName: string;
-  onFinishRenaming: (newName: string) => void;
-  onFinishCreateNewItem: () => void;
-  onCancelCreateNewItem: () => void;
-  onKeyDown: (e: React.KeyboardEvent) => void;
-  onSetNewItemName: (name: string) => void;
-  onShare: (file: FileItem) => void;
-  onDelete: (file: FileItem) => void;
-  onRename: (file: FileItem) => void;
-  onDuplicate: (file: FileItem) => void;
-  onDownload: (file: FileItem) => void;
-  showNewItemInput: boolean; // 控制是否显示新建文件输入框
-}
-
-// 简化文件类型定义 - 只保留文件类型
-export type FileItem = {
-  id: string;
-  name: string;
-  type: 'file'; // 固定为文件类型
-  is_starred?: boolean;
-  created_at?: string;
-  updated_at?: string;
-};
 
 const FileTree: React.FC<FileTreeProps> = ({
   files,
@@ -58,7 +33,7 @@ const FileTree: React.FC<FileTreeProps> = ({
   const setFileId = useEditorStore((state) => state.setFileId)
   const navigate = useNavigate()
 
-  // 渲染单个文件
+  // 逐个渲染单个文件
   const renderFile = (file: FileItem): React.ReactNode => {
     // 修正：使用正确地选中状态判断
     const isSelected = fileId === file.id;

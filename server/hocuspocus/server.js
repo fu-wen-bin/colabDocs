@@ -2,10 +2,42 @@ const { logger } = require('../utils/logger.js')
 const { ws_port } = require('../base.config.js')
 const jwt = require('jsonwebtoken')
 const { decode } = require('../utils/jwt')
-const { findContent } = require('../controllers/Documents')
+const { findContent, upsertDocumentContent } = require('../controllers/Documents')
 const { sql_config } = require('../base.config')
 const Y = require('yjs')
 const  debounce  = require('debounce')
+
+// 统一解析 requestParameters 的工具：支持 string / URLSearchParams / object
+function getParam(requestParameters, key) {
+  if (!requestParameters) return undefined
+
+  // 已经是 URLSearchParams
+  if (typeof URLSearchParams !== 'undefined' && requestParameters instanceof URLSearchParams) {
+    return requestParameters.get(key) ?? undefined
+  }
+
+  // 字符串（如 "a=1&b=2"）
+  if (typeof requestParameters === 'string') {
+    try {
+      const params = new URLSearchParams(requestParameters)
+      return params.get(key) ?? undefined
+    } catch {
+      // 兜底：手动解析
+      const pairs = requestParameters.split('&').map(s => s.split('='))
+      const hit = pairs.find(([k]) => k === key)
+      return hit ? decodeURIComponent(hit[1] || '') : undefined
+    }
+  }
+
+  // 普通对象（可能值是数组）
+  if (typeof requestParameters === 'object') {
+    const v = requestParameters[key]
+    if (Array.isArray(v)) return v[0]
+    return v
+  }
+
+  return undefined
+}
 
 // 使用动态 import 以在 CommonJS 中加载可能为 ESM-only 的依赖
 async function createHocuspocusServer () {
@@ -137,11 +169,7 @@ async function createHocuspocusServer () {
         const { userId, username } = decode(token)
         const currentTime = new Date().toLocaleString()
 
-        const user = {
-          id: userId,
-          name: username,
-          loginTime: currentTime,
-        }
+        const user = { id: userId, name: username, loginTime: currentTime, }
 
         logger.debug(
           `验证成功！用户ID：${userId}，用户名：${username}，时间：${currentTime}`)
@@ -154,9 +182,14 @@ async function createHocuspocusServer () {
       }
     },
 
-    // 连接时
-    async onConnect ({ documentName }) {
+    // 读取 URL 参数 preferLocal 并写入 context
+    async onConnect ({ documentName, requestParameters, connection }) {
       logger.debug(`正在连接到文档 ${documentName}`)
+      const raw = getParam(requestParameters, 'preferLocal')
+      const preferLocal = raw === '1' || raw === 'true'
+      logger.debug(`preferLocal 参数: ${preferLocal}`)
+      // 返回值将会 merge 到 context
+      return { preferLocal }
     },
 
     // 连接验证与权限控制
@@ -182,18 +215,29 @@ async function createHocuspocusServer () {
     },
 
     // 初始化加载文档
-    async onLoadDocument ({ documentName, document }) {
+    async onLoadDocument ({ documentName, document, context }) {
       logger.info(`开始加载文档: ${documentName}`)
 
       try {
+        // 如果前端声明本地为主，跳过服务器播种
+        if (context?.preferLocal === true) {
+          logger.info(`跳过服务器播种（preferLocal=true）：${documentName}`)
+          return document
+        }
+
         // 从数据库获取文档内容
         const result = await findContent({ fileId: documentName })
         console.log(result)
 
-        if (result && result[0] && result[0].content) {
-          logger.info(`从数据库加载文档: ${documentName}`)
+        function bufferToUint8(b) {
+          // mysql2 返回的是 Buffer
+          return new Uint8Array(b.buffer, b.byteOffset, b.byteLength)
+        }
 
-          // 解析 JSON 内容
+        if (result && result[0] && result[0].y_state) {
+          logger.info(`从服务器数据库加载文档: ${documentName}`)
+
+          /*// 解析 JSON 内容
           const jsonContent = typeof result[0].content === 'string'
                               ? JSON.parse(result[0].content) : result[0].content
 
@@ -204,8 +248,9 @@ async function createHocuspocusServer () {
           )
 
           // 应用更新到文档
-          const update = Y.encodeStateAsUpdate(ydoc)
-          Y.applyUpdate(document, update)
+          const update = Y.encodeStateAsUpdate(ydoc)*/
+          const update = bufferToUint8(result[0].y_state)
+          Y.applyUpdate(document, result[0].y_state)
 
           logger.info(`文档 ${documentName} 加载完成`)
           return document
@@ -223,7 +268,7 @@ async function createHocuspocusServer () {
 
     // 文档变更时保存
     async onChange ({ documentName, document, context }) {
-      const save = () => {
+      const save = async () => {
         logger.debug(`文档 ${documentName} 发生变更`)
 
         try {
@@ -234,26 +279,25 @@ async function createHocuspocusServer () {
             return
           }
 
-          // 将 Y.Doc 转换为 JSON
-          const jsonContent = TiptapTransformer.fromYdoc(
-            document,
-            'content',
-          )
+          // 二进制 Y 状态（权威）
+          const yUpdate = Y.encodeStateAsUpdate(document)
+          // 将 Y.Doc 转换为 JSON（便于导出/检索）
+          const jsonContent = TiptapTransformer.fromYdoc(document, 'content')
 
-          // 保存到数据库（这里需要您实现具体的保存逻辑）
-          // await saveContent({
-          //   fileId: documentName,
-          //   content: JSON.stringify(jsonContent),
-          //   userId: user.id
-          // })
+          await upsertDocumentContent({
+            fileId: documentName,
+            yState: Buffer.from(yUpdate),
+            content: JSON.stringify(jsonContent),
+          })
 
           logger.info(`文档 ${documentName} 已保存`)
         } catch (error) {
+          console.log(error)
           logger.error(`保存文档失败: ${error.message}`)
         }
       }
       debounced?.clear()
-      debounced = debounce(save, 5000)
+      debounced = debounce(save, 800)
       debounced()
     },
 
@@ -263,7 +307,10 @@ async function createHocuspocusServer () {
       logger.info(
         `用户 ${user?.name || '未知'} 断开文档 ${documentName} 的连接`)
     },
+
+
   })
+
 }
 
 module.exports = { createHocuspocusServer }

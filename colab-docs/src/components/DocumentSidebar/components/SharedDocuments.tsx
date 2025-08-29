@@ -1,21 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { Icon } from '@/components/ui/Icon';
-import { cn } from '@/utils/utils';
+import { Icon } from '@/components/Icon';
+import { cn } from '@/utils/utils.ts';
 import DocumentApi from '@/services/document';
 import { SharedDocumentItem } from '@/services/document/type';
+import { useSidebar } from '@/stores/sidebarStore.ts'
 
-interface SharedDocumentsProps {
-  isExpanded: boolean;
-  onToggle: () => void;
-}
 
-const SharedDocuments: React.FC<SharedDocumentsProps> = ({ isExpanded, onToggle }) => {
+const SharedDocuments = ({sharedFiles}) => {
+
   const router = useRouter();
   const [sharedDocs, setSharedDocs] = useState<SharedDocumentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isExpanded = useSidebar(state => state.isExpanded)
+  const onToggle = useSidebar(state => state.onToggle)
 
   // 加载分享文档
   const loadSharedDocuments = useCallback(async () => {

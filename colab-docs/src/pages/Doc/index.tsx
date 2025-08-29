@@ -1,14 +1,17 @@
 import { Suspense, useMemo } from 'react'
-import DocumentSidebar from './_components/DocumentSidebar'
+import DocumentSidebar from '../../components/DocumentSidebar'
 
 import { useSearchParams } from 'react-router'
 import MainContainer from '@/pages/Doc/MainContainer.tsx'
 import Page from '@/pages/Doc/Page.tsx'
 import { useEditorStore } from '@/stores/editorStore.ts'
+//import ShareDialog from '@/components/DocumentSidebar/components/ShareDialog.tsx'
 
 export default function Doc () {
   const [searchParams] = useSearchParams();
   const  setFileId  = useEditorStore((state) => state.setFileId)
+
+
 
   // 从查询参数获取 fileId
   const fileId = searchParams.get('fileId');
@@ -33,6 +36,18 @@ export default function Doc () {
 
       {/* 主内容区域 */}
         {mainContent}
+
+      {/* 分享对话框 */}
+      {/*{shareDialogFile && (
+        <ShareDialog
+          file={shareDialogFile}
+          isOpen={shareDialogOpen}
+          onClose={() => {
+            setShareDialogOpen(false);
+            setShareDialogFile(null);
+          }}
+        />
+      )}*/}
 
     </div>
   )
